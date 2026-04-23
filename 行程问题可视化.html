@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>行程问题可视化 | Math Motion</title>
+  <style>
+    /* ============================================
+       Notion 风格设计系统
+       ============================================ */
+
+    /* 颜色变量 */
+    :root {
+      --bg-primary: #F7F6F3;
+      --bg-secondary: #FFFFFF;
+      --bg-tertiary: #EFEBE9;
+      --bg-hover: #E9E5E2;
+
+      --text-primary: #37352F;
+      --text-secondary: #787774;
+      --text-tertiary: #9B9A97;
+
+      --accent-brown: #C28B5D;
+      --accent-orange: #E78F75;
+      --accent-green: #5FB789;
+      --accent-blue: #5E8AD2;
+
+      --border-light: #E9E5E2;
+      --border-medium: #D3D1CB;
+      --border-dark: #B8B6B1;
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 8px rgba(0,0,0,0.06);
+      --shadow-lg: 0 8px 16px rgba(0,0,0,0.08);
+    }
+
+    /* 字体 */
+    :root {
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      --font-serif: 'Georgia', 'Times New Roman', serif;
+    }
+
+    /* 全局重置 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* 容器 */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* 头部 */
+    .header {
+      text-align: center;
+      padding: 48px 0 32px;
+      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 32px;
+    }
+
+    .header h1 {
+      font-family: var(--font-serif);
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+
+    .header p {
+      font-size: 17px;
+      color: var(--text-secondary);
+    }
+
+    /* 顶部配置栏 */
+    .top-bar {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .top-bar-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .select {
+      padding: 8px 32px 8px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-medium);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 4L6 8L10 4' stroke='%23787774' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      transition: border-color 0.15s ease;
+    }
+
+    .select:hover {
+      border-color: var(--border-dark);
+    }
+
+    .select:focus {
+      outline: none;
+      border-color: var(--accent-brown);
+      box-shadow: 0 0 0 3px rgba(194, 139, 93, 0.1);
+    }
+
+    /* 按钮 */
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: var(--font-sans);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: var(--accent-brown);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #B67D4F;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-medium);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-hover);
+    }
+
+    .btn-danger {
+      background: #FFE5E5;
+      color: #E03E3E;
+      border: 1px solid #FFCCCC;
+    }
+
+    .btn-danger:hover {
+      background: #FFD4D4;
+    }
+
+    .btn-icon {
+      padding: 8px;
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 主布局 */
+    .main-layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    /* 配置面板 */
+    .config-panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+    }
+
+    .config-section {
+      margin-bottom: 20px;
+    }
+
+    .config-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .config-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .input-group {
+      margin-bottom: 12px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .input {
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-medium);
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--text-primary);
+      transition: border-color 0.15s ease;
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--accent-brown);
+      box-shadow: 0 0 0 3px rgba(194, 139, 93, 0.1);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    .checkbox-group label {
+      font-size: 14px;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    /* 物体配置卡片 */
+    .object-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .object-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .object-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .color-picker {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .color-option {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.15s ease;
+    }
+
+    .color-option:hover {
+      transform: scale(1.1);
+    }
+
+    .color-option.selected {
+      border-color: var(--text-primary);
+    }
+
+    /* 预览区 */
+    .preview-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .canvas-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* 控制面板 */
+    .controls-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .controls-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .speed-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .speed-btn {
+      padding: 6px 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-medium);
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .speed-btn:hover {
+      background: var(--bg-hover);
+    }
+
+    .speed-btn.active {
+      background: var(--accent-brown);
+      color: white;
+      border-color: var(--accent-brown);
+    }
+
+    /* 数据面板 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      padding: 12px;
+    }
+
+    .stat-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .stat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .stat-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .stat-value {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    /* 时间显示 */
+    .time-display {
+      text-align: center;
+      padding: 16px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+    }
+
+    .time-value {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--accent-brown);
+    }
+
+    /* 模态框 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover {
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+    }
+
+    /* 题库列表 */
+    .preset-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .preset-item {
+      padding: 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .preset-item:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-medium);
+    }
+
+    .preset-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .preset-description {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .preset-category {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--accent-brown);
+      color: white;
+      font-size: 11px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+    }
+
+    /* 保存题目 */
+    .save-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 页脚 */
+    .footer {
+      text-align: center;
+      padding: 32px 0;
+      color: var(--text-tertiary);
+      font-size: 13px;
+      border-top: 1px solid var(--border-light);
+      margin-top: 32px;
+    }
+
+    /* 滚动条 */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-tertiary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-medium);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-dark);
+    }
+
+    /* 响应式 */
+    @media (max-width: 1024px) {
+      .main-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .config-panel {
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 32px;
+      }
+
+      .top-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .top-bar-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .controls-row {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <header class="header">
+      <h1>行程问题可视化</h1>
+      <p>直观理解数学中的相遇、追击与往返问题</p>
+    </header>
+
+    <!-- 顶部配置栏 -->
+    <div class="top-bar">
+      <div class="top-bar-group">
+        <span class="label">题目类型:</span>
+        <select class="select" id="scenarioType" onchange="onScenarioChange()">
+          <option value="circular">环形跑道追击</option>
+          <option value="linear-meet">直线相遇问题</option>
+          <option value="linear-round">直线往返运动</option>
+          <option value="stop-go">走走停停模式</option>
+        </select>
+      </div>
+
+      <div class="top-bar-group">
+        <span class="label">物体数量:</span>
+        <select class="select" id="objectCount" onchange="onObjectCountChange()">
+          <option value="2">2个物体</option>
+          <option value="3">3个物体</option>
+          <option value="4">4个物体</option>
+        </select>
+      </div>
+
+      <div style="flex: 1;"></div>
+
+      <div class="top-bar-group">
+        <button class="btn btn-secondary" onclick="openPresetModal()">
+          📋 加载预设
+        </button>
+        <button class="btn btn-secondary" onclick="openSaveModal()">
+          💾 保存配置
+        </button>
+        <button class="btn btn-danger" onclick="resetAll()">
+          🗑️ 清空
+        </button>
+      </div>
+    </div>
+
+    <!-- 主布局 -->
+    <div class="main-layout">
+      <!-- 左侧：配置面板 -->
+      <div class="config-panel">
+        <div class="config-section">
+          <div class="config-title">📏 场景参数</div>
+          <div class="input-group" id="trackLengthGroup">
+            <label>跑道长度 (米)</label>
+            <input type="number" class="input" id="trackLength" value="400" min="100" max="2000">
+          </div>
+          <div class="input-group" id="distanceGroup" style="display: none;">
+            <label>两地距离 (公里)</label>
+            <input type="number" class="input" id="distance" value="225" min="1" max="1000">
+          </div>
+        </div>
+
+        <div class="config-section">
+          <div class="config-title">🚗 运动物体</div>
+          <div id="objectsConfig"></div>
+          <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="addObject()">
+            + 添加物体
+          </button>
+        </div>
+      </div>
+
+      <!-- 右侧：预览区 -->
+      <div class="preview-panel">
+        <div class="canvas-card">
+          <canvas id="mainCanvas"></canvas>
+        </div>
+
+        <div class="controls-card">
+          <div class="controls-row">
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-primary" id="playBtn" onclick="togglePlay()">
+                ▶️ 播放
+              </button>
+              <button class="btn btn-secondary" onclick="reset()">
+                🔄 重置
+              </button>
+            </div>
+
+            <div class="speed-controls">
+              <button class="speed-btn active" onclick="setSpeed(0.5)">0.5x</button>
+              <button class="speed-btn active" onclick="setSpeed(1)">1x</button>
+              <button class="speed-btn" onclick="setSpeed(2)">2x</button>
+              <button class="speed-btn" onclick="setSpeed(5)">5x</button>
+              <button class="speed-btn" onclick="setSpeed(10)">10x</button>
+            </div>
+          </div>
+
+          <div class="stats-grid" id="statsGrid"></div>
+
+          <div class="time-display">
+            <div class="time-value" id="timeDisplay">00:00.0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+      行程问题可视化工具 | 纯HTML + Canvas | Notion-inspired Design
+    </footer>
+  </div>
+
+  <!-- 预设题目模态框 -->
+  <div class="modal-overlay" id="presetModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">📋 预设题目</div>
+        <button class="modal-close" onclick="closePresetModal()">&times;</button>
+      </div>
+      <div class="preset-list" id="presetList"></div>
+    </div>
+  </div>
+
+  <!-- 保存配置模态框 -->
+  <div class="modal-overlay" id="saveModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">💾 保存配置</div>
+        <button class="modal-close" onclick="closeSaveModal()">&times;</button>
+      </div>
+      <div class="save-form">
+        <div class="input-group">
+          <label>题目名称</label>
+          <input type="text" class="input" id="saveName" placeholder="输入题目名称...">
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button class="btn btn-secondary" onclick="closeSaveModal()">取消</button>
+          <button class="btn btn-primary" onclick="saveConfig()">保存</button>
+        </div>
+      </div>
+      <div style="margin-top: 20px; border-top: 1px solid var(--border-light); padding-top: 16px;">
+        <div class="config-title">📂 我的题目</div>
+        <div class="preset-list" id="savedList" style="margin-top: 12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================
+    // 全局状态
+    // ============================================
+
+    const state = {
+      scenarioType: 'circular',
+      isPlaying: false,
+      time: 0,
+      speedMultiplier: 1,
+      objects: [],
+      trackLength: 400,
+      distance: 225,
+      lastTime: 0,
+      animationId: null,
+      met: false,
+      roundTrips: []
+    };
+
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 预设颜色
+    const COLORS = [
+      '#C28B5D', // 棕色
+      '#5E8AD2', // 蓝色
+      '#E78F75', // 橙色
+      '#5FB789', // 绿色
+      '#E03E3E', // 红色
+      '#9B7BB5', // 紫色
+      '#D4952A', // 金色
+      '#2F9E9E', // 青色
+      '#E565A5', // 粉色
+      '#6B7280'  // 灰色
+    ];
+
+    // ============================================
+    // 预设题目
+    // ============================================
+
+    const PRESETS = [
+      // 基础题
+      {
+        id: 'basic-1',
+        category: '基础题',
+        title: '环形追击-同向',
+        description: '甲6km/h，乙8km/h，400米跑道，乙多久追上甲？',
+        scenarioType: 'circular',
+        config: {
+          trackLength: 400,
+          objects: [
+            { name: '甲', speed: 6, color: COLORS[0], position: 0, direction: 'clockwise' },
+            { name: '乙', speed: 8, color: COLORS[1], position: 0, direction: 'clockwise' }
+          ]
+        }
+      },
+      {
+        id: 'basic-2',
+        category: '基础题',
+        title: '直线相遇-基础',
+        description: 'A、B相距225km，甲60km/h，乙72km/h，多久相遇？',
+        scenarioType: 'linear-meet',
+        config: {
+          distance: 225,
+          objects: [
+            { name: '甲车', speed: 60, color: COLORS[0], position: 0, direction: 'right' },
+            { name: '乙车', speed: 72, color: COLORS[1], position: 1, direction: 'left' }
+          ]
+        }
+      },
+      // 进阶题
+      {
+        id: 'advanced-1',
+        category: '进阶题',
+        title: '走走停停-复杂',
+        description: '甲跑45分钟停5分钟，乙跑25分钟停5分钟，多久相遇？',
+        scenarioType: 'stop-go',
+        config: {
+          distance: 225,
+          objects: [
+            { name: '甲车', speed: 60, color: COLORS[0], position: 0, direction: 'right', stopRule: { run: 45, stop: 5 } },
+            { name: '乙车', speed: 72, color: COLORS[1], position: 1, direction: 'left', stopRule: { run: 25, stop: 5 } }
+          ]
+        }
+      }
+    ];
+
+    // ============================================
+    // 初始化
+    // ============================================
+
+    function init() {
+      // 设置canvas尺寸
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      // 初始化物体
+      initObjects();
+
+      // 渲染配置面板
+      renderObjectsConfig();
+
+      // 渲染预设列表
+      renderPresetList();
+
+      // 渲染统计面板
+      renderStatsGrid();
+
+      // 绘制初始画面
+      draw();
+
+      // 加载本地保存的题目
+      loadSavedPresets();
+    }
+
+    function resizeCanvas() {
+      const container = canvas.parentElement;
+      canvas.width = container.clientWidth - 40;
+
+      if (state.scenarioType === 'circular') {
+        canvas.height = 450;
+      } else {
+        canvas.height = 280;
+      }
+
+      draw();
+    }
+
+    function initObjects() {
+      state.objects = [];
+      for (let i = 0; i < 2; i++) {
+        state.objects.push({
+          name: String.fromCharCode(65 + i), // A, B, C, D
+          speed: 6 + i * 2,
+          color: COLORS[i % COLORS.length],
+          position: 0,
+          direction: i === 0 ? 'clockwise' : 'clockwise',
+          stopRule: null
+        });
+      }
+    }
+
+    // ============================================
+    // 场景切换
+    // ============================================
+
+    function onScenarioChange() {
+      state.scenarioType = document.getElementById('scenarioType').value;
+
+      // 显示/隐藏参数
+      const trackLengthGroup = document.getElementById('trackLengthGroup');
+      const distanceGroup = document.getElementById('distanceGroup');
+
+      if (state.scenarioType === 'circular') {
+        trackLengthGroup.style.display = 'block';
+        distanceGroup.style.display = 'none';
+        canvas.height = 450;
+      } else {
+        trackLengthGroup.style.display = 'none';
+        distanceGroup.style.display = 'block';
+        canvas.height = 280;
+      }
+
+      // 重置状态
+      reset();
+      resizeCanvas();
+    }
+
+    function onObjectCountChange() {
+      const count = parseInt(document.getElementById('objectCount').value);
+
+      while (state.objects.length < count) {
+        addObject();
+      }
+
+      while (state.objects.length > count) {
+        state.objects.pop();
+      }
+
+      renderObjectsConfig();
+      renderStatsGrid();
+      draw();
+    }
+
+    // ============================================
+    // 物体配置
+    // ============================================
+
+    function addObject() {
+      const index = state.objects.length;
+      state.objects.push({
+        name: String.fromCharCode(65 + index),
+        speed: 6 + index * 2,
+        color: COLORS[index % COLORS.length],
+        position: 0,
+        direction: 'clockwise',
+        stopRule: null
+      });
+
+      renderObjectsConfig();
+      renderStatsGrid();
+      draw();
+    }
+
+    function removeObject(index) {
+      if (state.objects.length <= 2) {
+        alert('至少需要2个物体');
+        return;
+      }
+
+      state.objects.splice(index, 1);
+      renderObjectsConfig();
+      renderStatsGrid();
+      draw();
+    }
+
+    function renderObjectsConfig() {
+      const container = document.getElementById('objectsConfig');
+      container.innerHTML = '';
+
+      state.objects.forEach((obj, index) => {
+        const card = document.createElement('div');
+        card.className = 'object-card';
+        card.innerHTML = `
+          <div class="object-card-header">
+            <span class="object-card-title">🚗 物体${index + 1}</span>
+            <button class="btn btn-danger btn-icon" onclick="removeObject(${index})" title="删除物体">
+              🗑️
+            </button>
+          </div>
+
+          <div class="input-group">
+            <label>名称</label>
+            <input type="text" class="input" value="${obj.name}" onchange="updateObject(${index}, 'name', this.value)">
+          </div>
+
+          <div class="input-row">
+            <div class="input-group" style="flex: 1;">
+              <label>速度 (km/h)</label>
+              <input type="number" class="input" value="${obj.speed}" min="1" max="200" onchange="updateObject(${index}, 'speed', this.value)">
+            </div>
+            <div class="input-group" style="flex: 1;">
+              <label>起始位置 (%)</label>
+              <input type="number" class="input" value="${(obj.position * 100).toFixed(0)}" min="0" max="100" onchange="updateObject(${index}, 'position', this.value)">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>颜色</label>
+            <div class="color-picker">
+              ${COLORS.map((color, i) => `
+                <div class="color-option ${obj.color === color ? 'selected' : ''}"
+                     style="background: ${color}"
+                     onclick="updateObject(${index}, 'color', '${color}')">
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>方向</label>
+            <select class="select" onchange="updateObject(${index}, 'direction', this.value)">
+              ${state.scenarioType === 'circular' ? `
+                <option value="clockwise" ${obj.direction === 'clockwise' ? 'selected' : ''}>顺时针</option>
+                <option value="counter-clockwise" ${obj.direction === 'counter-clockwise' ? 'selected' : ''}>逆时针</option>
+              ` : `
+                <option value="right" ${obj.direction === 'right' ? 'selected' : ''}>从A向B</option>
+                <option value="left" ${obj.direction === 'left' ? 'selected' : ''}>从B向A</option>
+              `}
+            </select>
+          </div>
+
+          <div class="checkbox-group">
+            <input type="checkbox" id="stopRule${index}" ${obj.stopRule ? 'checked' : ''} onchange="toggleStopRule(${index}, this.checked)">
+            <label for="stopRule${index}">启用停顿规则</label>
+          </div>
+
+          ${obj.stopRule ? `
+            <div class="input-row">
+              <div class="input-group" style="flex: 1;">
+                <label>行驶时长 (分钟)</label>
+                <input type="number" class="input" value="${obj.stopRule.run}" min="1" max="120" onchange="updateStopRule(${index}, 'run', this.value)">
+              </div>
+              <div class="input-group" style="flex: 1;">
+                <label>停顿时长 (分钟)</label>
+                <input type="number" class="input" value="${obj.stopRule.stop}" min="1" max="60" onchange="updateStopRule(${index}, 'stop', this.value)">
+              </div>
+            </div>
+          ` : ''}
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function updateObject(index, key, value) {
+      if (key === 'speed') {
+        value = parseFloat(value);
+      } else if (key === 'position') {
+        value = parseFloat(value) / 100;
+      }
+
+      state.objects[index][key] = value;
+      draw();
+    }
+
+    function toggleStopRule(index, enabled) {
+      if (enabled) {
+        state.objects[index].stopRule = { run: 45, stop: 5 };
+      } else {
+        state.objects[index].stopRule = null;
+      }
+      renderObjectsConfig();
+    }
+
+    function updateStopRule(index, key, value) {
+      state.objects[index].stopRule[key] = parseInt(value);
+    }
+
+    // ============================================
+    // 统计面板
+    // ============================================
+
+    function renderStatsGrid() {
+      const container = document.getElementById('statsGrid');
+      container.innerHTML = '';
+
+      state.objects.forEach((obj, index) => {
+        const card = document.createElement('div');
+        card.className = 'stat-card';
+        card.innerHTML = `
+          <div class="stat-header">
+            <div class="stat-dot" style="background: ${obj.color};"></div>
+            <span class="stat-name">${obj.name}</span>
+          </div>
+          <div class="stat-value">
+            速度: ${obj.speed} km/h<br>
+            位置: ${(obj.position * 100).toFixed(1)}%<br>
+            状态: <span id="status${index}">🟢 行驶中</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // ============================================
+    // 动画控制
+    // ============================================
+
+    function togglePlay() {
+      state.isPlaying = !state.isPlaying;
+      const btn = document.getElementById('playBtn');
+
+      if (state.isPlaying) {
+        btn.textContent = '⏸️ 暂停';
+        state.lastTime = 0;
+        state.animationId = requestAnimationFrame(update);
+      } else {
+        btn.textContent = '▶️ 播放';
+        if (state.animationId) {
+          cancelAnimationFrame(state.animationId);
+        }
+        state.lastTime = 0;
+      }
+    }
+
+    function reset() {
+      state.isPlaying = false;
+      state.time = 0;
+      state.met = false;
+      state.roundTrips = [];
+
+      // 重置物体位置
+      state.objects.forEach((obj, index) => {
+        obj.position = 0;
+        if (state.scenarioType !== 'circular') {
+          obj.position = index === 0 ? 0 : 1;
+        }
+      });
+
+      if (state.animationId) {
+        cancelAnimationFrame(state.animationId);
+      }
+
+      document.getElementById('playBtn').textContent = '▶️ 播放';
+      state.lastTime = 0;
+
+      draw();
+      updateTimeDisplay();
+      updateStatsDisplay();
+    }
+
+    function resetAll() {
+      if (confirm('确定要清空所有配置吗？')) {
+        initObjects();
+        renderObjectsConfig();
+        renderStatsGrid();
+        reset();
+      }
+    }
+
+    function setSpeed(speed) {
+      state.speedMultiplier = speed;
+
+      // 更新按钮状态
+      document.querySelectorAll('.speed-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent === speed + 'x') {
+          btn.classList.add('active');
+        }
+      });
+    }
+
+    // ============================================
+    // 动画更新
+    // ============================================
+
+    function update(timestamp) {
+      if (!state.isPlaying) return;
+
+      if (!state.lastTime) state.lastTime = timestamp;
+      const deltaTime = (timestamp - state.lastTime) / 1000;
+      state.lastTime = timestamp;
+
+      // 时间单位：秒
+      state.time += deltaTime * state.speedMultiplier;
+
+      // 更新物体位置
+      if (state.scenarioType === 'circular') {
+        updateCircular(deltaTime);
+      } else {
+        updateLinear(deltaTime);
+      }
+
+      draw();
+      updateTimeDisplay();
+      updateStatsDisplay();
+
+      state.animationId = requestAnimationFrame(update);
+    }
+
+    function updateCircular(deltaTime) {
+      const trackLength = state.trackLength;
+
+      state.objects.forEach(obj => {
+        const speedPerSecond = (obj.speed * 1000) / 3600;
+        const distanceRatio = (speedPerSecond * deltaTime * state.speedMultiplier) / trackLength;
+        const oldPosition = obj.position;
+        obj.position = (obj.position + distanceRatio) % 1;
+      });
+    }
+
+    function updateLinear(deltaTime) {
+      const distance = state.distance;
+      const timeInMinutes = state.time / 60;
+
+      state.objects.forEach(obj => {
+        // 检查停顿规则
+        if (obj.stopRule) {
+          const cycleTime = obj.stopRule.run + obj.stopRule.stop;
+          const timeInCycle = timeInMinutes % cycleTime;
+
+          if (timeInCycle < obj.stopRule.run) {
+            // 行驶中
+            const speedPerMinute = obj.speed / 60;
+            const distanceRatio = (speedPerMinute * deltaTime * state.speedMultiplier / 60) / distance;
+
+            if (obj.direction === 'right') {
+              obj.position = Math.min(1, obj.position + distanceRatio);
+            } else {
+              obj.position = Math.max(0, obj.position - distanceRatio);
+            }
+          }
+          // 停顿中不更新位置
+        } else {
+          // 无停顿规则，持续行驶
+          const speedPerMinute = obj.speed / 60;
+          const distanceRatio = (speedPerMinute * deltaTime * state.speedMultiplier / 60) / distance;
+
+          if (obj.direction === 'right') {
+            obj.position = Math.min(1, obj.position + distanceRatio);
+          } else {
+            obj.position = Math.max(0, obj.position - distanceRatio);
+          }
+        }
+
+        // 往返模式：检测是否到达端点
+        if (state.scenarioType === 'linear-round') {
+          if (obj.position >= 1) {
+            obj.position = 1;
+            obj.direction = 'left';
+          } else if (obj.position <= 0) {
+            obj.position = 0;
+            obj.direction = 'right';
+          }
+        }
+      });
+
+      // 检测相遇
+      if (!state.met && state.objects.length >= 2) {
+        const distanceApart = Math.abs(state.objects[0].position - state.objects[1].position);
+        if (distanceApart < 0.01) {
+          state.met = true;
+        }
+      }
+    }
+
+    // ============================================
+    // 绘制函数
+    // ============================================
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (state.scenarioType === 'circular') {
+        drawCircularTrack();
+      } else {
+        drawLinearTrack();
+      }
+    }
+
+    function drawCircularTrack() {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radiusX = canvas.width / 2 - 80;
+      const radiusY = canvas.height / 2 - 80;
+
+      // 绘制跑道
+      ctx.beginPath();
+      ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#E9E5E2';
+      ctx.lineWidth = 50;
+      ctx.stroke();
+
+      // 绘制跑道边界
+      ctx.beginPath();
+      ctx.ellipse(centerX, centerY, radiusX + 25, radiusY + 25, 0, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#D3D1CB';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.ellipse(centerX, centerY, radiusX - 25, radiusY - 25, 0, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#D3D1CB';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 绘制起点线
+      const startX = centerX + radiusX;
+      const startY = centerY;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY - 25);
+      ctx.lineTo(startX, startY + 25);
+      ctx.strokeStyle = '#C28B5D';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 绘制物体
+      state.objects.forEach(obj => {
+        const angle = obj.position * 2 * Math.PI - Math.PI / 2;
+        const x = centerX + radiusX * Math.cos(angle);
+        const y = centerY + radiusY * Math.sin(angle);
+
+        // 绘制物体
+        ctx.beginPath();
+        ctx.arc(x, y, 14, 0, 2 * Math.PI);
+        ctx.fillStyle = obj.color;
+        ctx.fill();
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 绘制标签
+        ctx.fillStyle = '#37352F';
+        ctx.font = 'bold 14px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(obj.name, x, y - 20);
+      });
+    }
+
+    function drawLinearTrack() {
+      const padding = 80;
+      const trackWidth = canvas.width - padding * 2;
+      const trackY = canvas.height / 2;
+
+      // 绘制跑道
+      ctx.beginPath();
+      ctx.moveTo(padding, trackY);
+      ctx.lineTo(canvas.width - padding, trackY);
+      ctx.strokeStyle = '#E9E5E2';
+      ctx.lineWidth = 50;
+      ctx.stroke();
+
+      // 绘制跑道边界
+      ctx.beginPath();
+      ctx.moveTo(padding, trackY - 25);
+      ctx.lineTo(canvas.width - padding, trackY - 25);
+      ctx.strokeStyle = '#D3D1CB';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(padding, trackY + 25);
+      ctx.lineTo(canvas.width - padding, trackY + 25);
+      ctx.strokeStyle = '#D3D1CB';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 绘制A、B标记
+      ctx.fillStyle = '#37352F';
+      ctx.font = 'bold 18px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('A', padding, trackY - 35);
+      ctx.fillText('B', canvas.width - padding, trackY - 35);
+
+      // 绘制距离标记
+      ctx.fillStyle = '#787774';
+      ctx.font = '14px -apple-system, sans-serif';
+      const dist = state.scenarioType === 'stop-go' ? state.distance : state.distance;
+      ctx.fillText(`${dist}公里`, canvas.width / 2, trackY + 50);
+
+      // 绘制相遇点
+      if (state.met) {
+        const meetX = padding + state.objects[0].position * trackWidth;
+        ctx.beginPath();
+        ctx.arc(meetX, trackY, 10, 0, 2 * Math.PI);
+        ctx.fillStyle = '#D4952A';
+        ctx.fill();
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#D4952A';
+        ctx.font = 'bold 12px -apple-system, sans-serif';
+        ctx.fillText('⭐ 相遇', meetX, trackY - 35);
+      }
+
+      // 绘制物体
+      state.objects.forEach(obj => {
+        const x = padding + obj.position * trackWidth;
+        const y = trackY;
+
+        // 绘制物体
+        ctx.beginPath();
+        ctx.arc(x, y, 14, 0, 2 * Math.PI);
+        ctx.fillStyle = obj.color;
+        ctx.fill();
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 绘制方向箭头
+        ctx.beginPath();
+        if (obj.direction === 'right' || obj.direction === 'clockwise') {
+          ctx.moveTo(x + 22, y);
+          ctx.lineTo(x + 16, y - 5);
+          ctx.lineTo(x + 16, y + 5);
+        } else {
+          ctx.moveTo(x - 22, y);
+          ctx.lineTo(x - 16, y - 5);
+          ctx.lineTo(x - 16, y + 5);
+        }
+        ctx.fillStyle = obj.color;
+        ctx.fill();
+
+        // 绘制标签
+        ctx.fillStyle = '#37352F';
+        ctx.font = 'bold 14px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(obj.name, x, y - 22);
+      });
+    }
+
+    // ============================================
+    // 显示更新
+    // ============================================
+
+    function updateTimeDisplay() {
+      const minutes = Math.floor(state.time / 60);
+      const seconds = (state.time % 60).toFixed(1);
+      document.getElementById('timeDisplay').textContent =
+        `${minutes.toString().padStart(2, '0')}:${seconds.padStart(4, '0')}`;
+    }
+
+    function updateStatsDisplay() {
+      state.objects.forEach((obj, index) => {
+        const statusEl = document.getElementById(`status${index}`);
+        if (!statusEl) return;
+
+        if (obj.stopRule) {
+          const timeInMinutes = state.time / 60;
+          const cycleTime = obj.stopRule.run + obj.stopRule.stop;
+          const timeInCycle = timeInMinutes % cycleTime;
+
+          if (timeInCycle < obj.stopRule.run) {
+            statusEl.textContent = '🟢 行驶中';
+          } else {
+            statusEl.textContent = '🔴 停顿中';
+          }
+        } else {
+          statusEl.textContent = '🟢 行驶中';
+        }
+      });
+    }
+
+    // ============================================
+    // 题库系统
+    // ============================================
+
+    function renderPresetList() {
+      const container = document.getElementById('presetList');
+      container.innerHTML = '';
+
+      PRESETS.forEach(preset => {
+        const item = document.createElement('div');
+        item.className = 'preset-item';
+        item.innerHTML = `
+          <span class="preset-category">${preset.category}</span>
+          <div class="preset-title">${preset.title}</div>
+          <div class="preset-description">${preset.description}</div>
+        `;
+        item.onclick = () => loadPreset(preset);
+        container.appendChild(item);
+      });
+    }
+
+    function loadPreset(preset) {
+      state.scenarioType = preset.scenarioType;
+      document.getElementById('scenarioType').value = preset.scenarioType;
+
+      if (preset.scenarioType === 'circular') {
+        state.trackLength = preset.config.trackLength;
+        document.getElementById('trackLength').value = preset.config.trackLength;
+      } else {
+        state.distance = preset.config.distance;
+        document.getElementById('distance').value = preset.config.distance;
+      }
+
+      state.objects = preset.config.objects.map(obj => ({...obj}));
+      document.getElementById('objectCount').value = state.objects.length;
+
+      renderObjectsConfig();
+      renderStatsGrid();
+      reset();
+      closePresetModal();
+    }
+
+    function openPresetModal() {
+      document.getElementById('presetModal').classList.add('active');
+    }
+
+    function closePresetModal() {
+      document.getElementById('presetModal').classList.remove('active');
+    }
+
+    function openSaveModal() {
+      document.getElementById('saveModal').classList.add('active');
+      loadSavedPresets();
+    }
+
+    function closeSaveModal() {
+      document.getElementById('saveModal').classList.remove('active');
+    }
+
+    function saveConfig() {
+      const name = document.getElementById('saveName').value.trim();
+      if (!name) {
+        alert('请输入题目名称');
+        return;
+      }
+
+      const config = {
+        id: Date.now().toString(),
+        name: name,
+        scenarioType: state.scenarioType,
+        config: {
+          trackLength: state.trackLength,
+          distance: state.distance,
+          objects: state.objects.map(obj => ({...obj}))
+        },
+        createdAt: new Date().toISOString()
+      };
+
+      const saved = JSON.parse(localStorage.getItem('mathMotionPresets') || '[]');
+      saved.push(config);
+      localStorage.setItem('mathMotionPresets', JSON.stringify(saved));
+
+      document.getElementById('saveName').value = '';
+      loadSavedPresets();
+      alert('保存成功！');
+    }
+
+    function loadSavedPresets() {
+      const saved = JSON.parse(localStorage.getItem('mathMotionPresets') || '[]');
+      const container = document.getElementById('savedList');
+      container.innerHTML = '';
+
+      if (saved.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-tertiary); padding: 20px;">暂无保存的题目</div>';
+        return;
+      }
+
+      saved.forEach((preset, index) => {
+        const item = document.createElement('div');
+        item.className = 'preset-item';
+        item.innerHTML = `
+          <div class="preset-title">${preset.name}</div>
+          <div class="preset-description">${new Date(preset.createdAt).toLocaleDateString()}</div>
+        `;
+        item.onclick = () => loadSavedPreset(preset);
+        container.appendChild(item);
+      });
+    }
+
+    function loadSavedPreset(preset) {
+      state.scenarioType = preset.scenarioType;
+      document.getElementById('scenarioType').value = preset.scenarioType;
+
+      if (preset.scenarioType === 'circular') {
+        state.trackLength = preset.config.trackLength;
+        document.getElementById('trackLength').value = preset.config.trackLength;
+      } else {
+        state.distance = preset.config.distance;
+        document.getElementById('distance').value = preset.config.distance;
+      }
+
+      state.objects = preset.config.objects.map(obj => ({...obj}));
+      document.getElementById('objectCount').value = state.objects.length;
+
+      renderObjectsConfig();
+      renderStatsGrid();
+      reset();
+      closeSaveModal();
+    }
+
+    // ============================================
+    // 启动
+    // ============================================
+
+    window.onload = init;
+  </script>
+</body>
+</html>
