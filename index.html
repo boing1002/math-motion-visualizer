@@ -24,6 +24,8 @@
       --accent-orange: #E78F75;
       --accent-green: #5FB789;
       --accent-blue: #5E8AD2;
+      --accent-red: #E03E3E;
+      --accent-gold: #D4952A;
 
       --border-light: #E9E5E2;
       --border-medium: #D3D1CB;
@@ -429,6 +431,18 @@
       line-height: 1.8;
     }
 
+    .meeting-stats {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .meeting-item {
+      font-size: 11px;
+      color: var(--accent-gold);
+      padding: 2px 0;
+    }
+
     /* 时间显示 */
     .time-display {
       text-align: center;
@@ -442,6 +456,43 @@
       font-size: 28px;
       font-weight: 600;
       color: var(--accent-brown);
+    }
+
+    /* Toast提示 */
+    .toast {
+      position: fixed;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent-gold);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      z-index: 1000;
+      box-shadow: var(--shadow-lg);
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
     }
 
     /* 模态框 */
@@ -466,7 +517,7 @@
       background: var(--bg-secondary);
       border-radius: 8px;
       padding: 24px;
-      max-width: 600px;
+      max-width: 400px;
       width: 90%;
       max-height: 80vh;
       overflow-y: auto;
@@ -503,6 +554,20 @@
     .modal-close:hover {
       background: var(--bg-tertiary);
       border-radius: 4px;
+    }
+
+    .meeting-details p {
+      margin: 8px 0;
+      font-size: 14px;
+    }
+
+    .meeting-details strong {
+      color: var(--text-primary);
+    }
+
+    .modal button {
+      margin-top: 16px;
+      width: 100%;
     }
 
     /* 题库列表 */
@@ -727,8 +792,20 @@
 
     <!-- 页脚 -->
     <footer class="footer">
-      行程问题可视化工具 | 纯HTML + Canvas | Notion-inspired Design
+      行程问题可视化工具 v2.0 | 纯HTML + Canvas | Notion-inspired Design
     </footer>
+  </div>
+
+  <!-- 相遇详情模态框 -->
+  <div class="modal-overlay" id="meetingModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="meetingModalTitle">⭐ 相遇详情</div>
+        <button class="modal-close" onclick="closeMeetingModal()">&times;</button>
+      </div>
+      <div class="meeting-details" id="meetingModalContent"></div>
+      <button class="btn btn-primary" onclick="closeMeetingModal()">关闭</button>
+    </div>
   </div>
 
   <!-- 预设题目模态框 -->
@@ -781,8 +858,10 @@
       distance: 225,
       lastTime: 0,
       animationId: null,
-      met: false,
-      roundTrips: []
+      meetings: [],  // 相遇记录
+      lastMetTime: 0,  // 防止重复记录
+      isFlashing: false,  // 闪动状态
+      flashObjects: []  // 正在闪动的物体
     };
 
     const canvas = document.getElementById('mainCanvas');
@@ -803,11 +882,66 @@
     ];
 
     // ============================================
+    // 工具函数
+    // ============================================
+
+    // 颜色变暗
+    function darkenColor(hex, percent) {
+      const num = parseInt(hex.replace('#', ''), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = Math.max((num >> 16) - amt, 0);
+      const G = Math.max((num >> 8 & 0x00FF) - amt, 0);
+      const B = Math.max((num & 0x0000FF) - amt, 0);
+      return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
+    }
+
+    // 显示Toast提示
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 2000);
+    }
+
+    // 显示相遇详情模态框
+    function showMeetingModal(meeting) {
+      const modal = document.getElementById('meetingModal');
+      const title = document.getElementById('meetingModalTitle');
+      const content = document.getElementById('meetingModalContent');
+
+      title.textContent = `⭐ 第${meeting.count}次相遇`;
+
+      if (state.scenarioType === 'circular') {
+        content.innerHTML = `
+          <p><strong>追上时间：</strong>${meeting.time.toFixed(1)} 分钟</p>
+          <p><strong>位置：</strong>${(meeting.position * 100).toFixed(1)}%</p>
+          <p><strong>圈数：</strong>甲${meeting.laps1}圈，乙${meeting.laps2}圈</p>
+        `;
+      } else {
+        content.innerHTML = `
+          <p><strong>相遇时间：</strong>${meeting.time.toFixed(1)} 分钟</p>
+          <p><strong>相遇位置：</strong>${(meeting.position * 100).toFixed(1)}%</p>
+          <p><strong>距A点：</strong>${(meeting.position * state.distance).toFixed(1)} 公里</p>
+        `;
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeMeetingModal() {
+      document.getElementById('meetingModal').classList.remove('active');
+    }
+
+    // ============================================
     // 预设题目
     // ============================================
 
     const PRESETS = [
-      // 基础题
       {
         id: 'basic-1',
         category: '基础题',
@@ -836,7 +970,6 @@
           ]
         }
       },
-      // 进阶题
       {
         id: 'advanced-1',
         category: '进阶题',
@@ -858,26 +991,14 @@
     // ============================================
 
     function init() {
-      // 设置canvas尺寸
       resizeCanvas();
       window.addEventListener('resize', resizeCanvas);
 
-      // 初始化物体
       initObjects();
-
-      // 渲染配置面板
       renderObjectsConfig();
-
-      // 渲染预设列表
       renderPresetList();
-
-      // 渲染统计面板
       renderStatsGrid();
-
-      // 绘制初始画面
       draw();
-
-      // 加载本地保存的题目
       loadSavedPresets();
     }
 
@@ -898,12 +1019,21 @@
       state.objects = [];
       for (let i = 0; i < 2; i++) {
         state.objects.push({
-          name: String.fromCharCode(65 + i), // A, B, C, D
+          name: String.fromCharCode(65 + i),
           speed: 6 + i * 2,
           color: COLORS[i % COLORS.length],
           position: 0,
-          direction: i === 0 ? 'clockwise' : 'clockwise',
-          stopRule: null
+          direction: 'clockwise',
+          stopRule: null,
+          laps: 0,
+          trail: [],  // 轨迹点
+          trailStyle: i === 0 ? 'solid' : 'dashed',  // 实线/虚线
+          isStopped: false,
+          stopRemaining: 0,
+          isTurning: false,
+          turnProgress: 0,
+          currentSpeed: 0,
+          rotation: 0
         });
       }
     }
@@ -915,7 +1045,6 @@
     function onScenarioChange() {
       state.scenarioType = document.getElementById('scenarioType').value;
 
-      // 显示/隐藏参数
       const trackLengthGroup = document.getElementById('trackLengthGroup');
       const distanceGroup = document.getElementById('distanceGroup');
 
@@ -929,7 +1058,6 @@
         canvas.height = 280;
       }
 
-      // 重置状态
       reset();
       resizeCanvas();
     }
@@ -962,7 +1090,16 @@
         color: COLORS[index % COLORS.length],
         position: 0,
         direction: 'clockwise',
-        stopRule: null
+        stopRule: null,
+        laps: 0,
+        trail: [],
+        trailStyle: index % 2 === 0 ? 'solid' : 'dashed',
+        isStopped: false,
+        stopRemaining: 0,
+        isTurning: false,
+        turnProgress: 0,
+        currentSpeed: 0,
+        rotation: 0
       });
 
       renderObjectsConfig();
@@ -1095,6 +1232,20 @@
       state.objects.forEach((obj, index) => {
         const card = document.createElement('div');
         card.className = 'stat-card';
+
+        let meetingInfo = '';
+        if (state.meetings.length > 0) {
+          meetingInfo = `<div class="meeting-stats">`;
+          if (state.scenarioType === 'circular') {
+            const catchCount = state.meetings.filter(m => m.objects.includes(index)).length;
+            meetingInfo += `<div class="meeting-item">参与追上: ${catchCount}次</div>`;
+          } else {
+            const meetCount = state.meetings.filter(m => m.objects.includes(index)).length;
+            meetingInfo += `<div class="meeting-item">参与相遇: ${meetCount}次</div>`;
+          }
+          meetingInfo += `</div>`;
+        }
+
         card.innerHTML = `
           <div class="stat-header">
             <div class="stat-dot" style="background: ${obj.color};"></div>
@@ -1105,6 +1256,7 @@
             位置: ${(obj.position * 100).toFixed(1)}%<br>
             状态: <span id="status${index}">🟢 行驶中</span>
           </div>
+          ${meetingInfo}
         `;
         container.appendChild(card);
       });
@@ -1134,14 +1286,22 @@
     function reset() {
       state.isPlaying = false;
       state.time = 0;
-      state.met = false;
-      state.roundTrips = [];
+      state.meetings = [];
+      state.lastMetTime = 0;
+      state.isFlashing = false;
 
-      // 重置物体位置
       state.objects.forEach((obj, index) => {
         obj.position = 0;
-        if (state.scenarioType !== 'circular') {
-          obj.position = index === 0 ? 0 : 1;
+        obj.laps = 0;
+        obj.trail = [];
+        obj.isStopped = false;
+        obj.stopRemaining = 0;
+        obj.isTurning = false;
+        obj.currentSpeed = obj.speed;
+        obj.rotation = 0;
+
+        if (state.scenarioType !== 'circular' && index > 0) {
+          obj.position = 1;
         }
       });
 
@@ -1155,6 +1315,7 @@
       draw();
       updateTimeDisplay();
       updateStatsDisplay();
+      renderStatsGrid();
     }
 
     function resetAll() {
@@ -1169,7 +1330,6 @@
     function setSpeed(speed) {
       state.speedMultiplier = speed;
 
-      // 更新按钮状态
       document.querySelectorAll('.speed-btn').forEach(btn => {
         btn.classList.remove('active');
         if (btn.textContent === speed + 'x') {
@@ -1189,16 +1349,15 @@
       const deltaTime = (timestamp - state.lastTime) / 1000;
       state.lastTime = timestamp;
 
-      // 时间单位：秒
       state.time += deltaTime * state.speedMultiplier;
 
-      // 更新物体位置
       if (state.scenarioType === 'circular') {
         updateCircular(deltaTime);
       } else {
         updateLinear(deltaTime);
       }
 
+      checkMeetings();
       draw();
       updateTimeDisplay();
       updateStatsDisplay();
@@ -1214,6 +1373,22 @@
         const distanceRatio = (speedPerSecond * deltaTime * state.speedMultiplier) / trackLength;
         const oldPosition = obj.position;
         obj.position = (obj.position + distanceRatio) % 1;
+
+        if (obj.position < distanceRatio) {
+          obj.laps++;
+        }
+
+        // 记录轨迹
+        if (obj.trail.length === 0 ||
+            Math.abs(obj.position - obj.trail[obj.trail.length - 1].position) > 0.01) {
+          obj.trail.push({
+            position: obj.position,
+            time: state.time
+          });
+          if (obj.trail.length > 500) {
+            obj.trail.shift();
+          }
+        }
       });
     }
 
@@ -1229,22 +1404,31 @@
 
           if (timeInCycle < obj.stopRule.run) {
             // 行驶中
+            obj.isStopped = false;
+            obj.stopRemaining = 0;
+
             const speedPerMinute = obj.speed / 60;
             const distanceRatio = (speedPerMinute * deltaTime * state.speedMultiplier / 60) / distance;
 
-            if (obj.direction === 'right') {
+            if (obj.direction === 'right' || obj.direction === 'clockwise') {
               obj.position = Math.min(1, obj.position + distanceRatio);
             } else {
               obj.position = Math.max(0, obj.position - distanceRatio);
             }
+          } else {
+            // 停顿中
+            obj.isStopped = true;
+            obj.stopRemaining = obj.stopRule.stop - (timeInCycle - obj.stopRule.run);
           }
-          // 停顿中不更新位置
         } else {
           // 无停顿规则，持续行驶
+          obj.isStopped = false;
+          obj.stopRemaining = 0;
+
           const speedPerMinute = obj.speed / 60;
           const distanceRatio = (speedPerMinute * deltaTime * state.speedMultiplier / 60) / distance;
 
-          if (obj.direction === 'right') {
+          if (obj.direction === 'right' || obj.direction === 'clockwise') {
             obj.position = Math.min(1, obj.position + distanceRatio);
           } else {
             obj.position = Math.max(0, obj.position - distanceRatio);
@@ -1261,15 +1445,80 @@
             obj.direction = 'right';
           }
         }
-      });
 
-      // 检测相遇
-      if (!state.met && state.objects.length >= 2) {
-        const distanceApart = Math.abs(state.objects[0].position - state.objects[1].position);
-        if (distanceApart < 0.01) {
-          state.met = true;
+        // 记录轨迹
+        if (obj.trail.length === 0 ||
+            Math.abs(obj.position - obj.trail[obj.trail.length - 1].position) > 0.01) {
+          obj.trail.push({
+            position: obj.position,
+            time: state.time
+          });
+          if (obj.trail.length > 500) {
+            obj.trail.shift();
+          }
+        }
+      });
+    }
+
+    // 相遇检测
+    function checkMeetings() {
+      for (let i = 0; i < state.objects.length; i++) {
+        for (let j = i + 1; j < state.objects.length; j++) {
+          const obj1 = state.objects[i];
+          const obj2 = state.objects[j];
+
+          const distance = Math.abs(obj1.position - obj2.position);
+
+          // 相遇阈值
+          if (distance < 0.01) {
+            const now = Date.now();
+
+            // 防止重复记录（1秒内只记录一次）
+            if (now - state.lastMetTime > 1000) {
+              const meeting = {
+                time: state.time,
+                position: (obj1.position + obj2.position) / 2,
+                objects: [i, j],
+                count: state.meetings.length + 1,
+                laps1: obj1.laps,
+                laps2: obj2.laps
+              };
+
+              state.meetings.push(meeting);
+              state.lastMetTime = now;
+
+              // 触发相遇效果
+              triggerMeetingEffect(meeting);
+
+              // 更新统计
+              renderStatsGrid();
+            }
+          }
         }
       }
+    }
+
+    function triggerMeetingEffect(meeting) {
+      // 闪动动画
+      state.isFlashing = true;
+      state.flashObjects = meeting.objects;
+
+      setTimeout(() => {
+        state.isFlashing = false;
+        state.flashObjects = [];
+      }, 1000);
+
+      // Toast提示
+      if (state.scenarioType === 'circular') {
+        showToast('⭐ 追上！');
+      } else {
+        showToast('⭐ 相遇！');
+      }
+
+      // 延迟显示详情弹窗
+      setTimeout(() => {
+        showMeetingModal(meeting);
+      }, 500);
     }
 
     // ============================================
@@ -1289,59 +1538,102 @@
     function drawCircularTrack() {
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
-      const radiusX = canvas.width / 2 - 80;
-      const radiusY = canvas.height / 2 - 80;
+      const radius = Math.min(canvas.width, canvas.height) / 2 - 100;  // 正圆
 
-      // 绘制跑道
+      // 绘制跑道（棕色，粗线）
       ctx.beginPath();
-      ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
-      ctx.strokeStyle = '#E9E5E2';
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#C28B5D';  // Notion棕色
       ctx.lineWidth = 50;
       ctx.stroke();
 
-      // 绘制跑道边界
+      // 绘制边界（黑色，明显）
       ctx.beginPath();
-      ctx.ellipse(centerX, centerY, radiusX + 25, radiusY + 25, 0, 0, 2 * Math.PI);
-      ctx.strokeStyle = '#D3D1CB';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.ellipse(centerX, centerY, radiusX - 25, radiusY - 25, 0, 0, 2 * Math.PI);
-      ctx.strokeStyle = '#D3D1CB';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // 绘制起点线
-      const startX = centerX + radiusX;
-      const startY = centerY;
-      ctx.beginPath();
-      ctx.moveTo(startX, startY - 25);
-      ctx.lineTo(startX, startY + 25);
-      ctx.strokeStyle = '#C28B5D';
+      ctx.arc(centerX, centerY, radius + 25, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#37352F';  // 深灰黑
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      // 绘制物体
-      state.objects.forEach(obj => {
-        const angle = obj.position * 2 * Math.PI - Math.PI / 2;
-        const x = centerX + radiusX * Math.cos(angle);
-        const y = centerY + radiusY * Math.sin(angle);
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius - 25, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#37352F';
+      ctx.lineWidth = 3;
+      ctx.stroke();
 
-        // 绘制物体
+      // 绘制轨迹线
+      state.objects.forEach(obj => {
+        drawCircularTrail(obj, centerX, centerY, radius);
+      });
+
+      // 绘制起点标签
+      drawLabel({
+        x: centerX + radius,
+        y: centerY - 40,
+        icon: '🟢',
+        text: '起点',
+        color: '#5FB789',
+        bgColor: '#FFFFFF',
+        borderColor: '#5FB789'
+      });
+
+      // 绘制相遇点标签
+      state.meetings.forEach(meeting => {
+        const angle = meeting.position * 2 * Math.PI - Math.PI / 2;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+
+        // 星星图标
+        ctx.fillStyle = '#D4952A';
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('⭐', x, y + 8);
+
+        // 序号
+        ctx.fillStyle = '#D4952A';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText(`①②③④⑤⑥⑦⑧⑨`.charAt(meeting.count - 1), x + 20, y - 15);
+      });
+
+      // 绘制物体
+      state.objects.forEach((obj, index) => {
+        const angle = obj.position * 2 * Math.PI - Math.PI / 2;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+
+        // 停顿时半透明
+        if (obj.isStopped) {
+          ctx.globalAlpha = 0.5;
+        }
+
+        // 绘制物体（实心圆+深色描边）
         ctx.beginPath();
         ctx.arc(x, y, 14, 0, 2 * Math.PI);
         ctx.fillStyle = obj.color;
         ctx.fill();
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = darkenColor(obj.color, 30);
+        ctx.lineWidth = 3;
         ctx.stroke();
 
-        // 绘制标签
+        ctx.globalAlpha = 1.0;
+
+        // 标签
         ctx.fillStyle = '#37352F';
         ctx.font = 'bold 14px -apple-system, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(obj.name, x, y - 20);
+        ctx.fillText(obj.name, x, y - 22);
+
+        // 圈数
+        ctx.fillStyle = '#787774';
+        ctx.font = 'bold 12px -apple-system, sans-serif';
+        ctx.fillText(`${obj.laps}圈`, x, y + 28);
+
+        // 停顿倒计时圈
+        if (obj.isStopped && obj.stopRemaining > 0) {
+          drawStopCountdown(x, y, obj.stopRemaining);
+        }
+
+        // 方向箭头
+        drawDirectionArrow(obj, x, y, obj.direction === 'clockwise');
       });
     }
 
@@ -1350,92 +1642,250 @@
       const trackWidth = canvas.width - padding * 2;
       const trackY = canvas.height / 2;
 
-      // 绘制跑道
+      // 绘制跑道（棕色，粗线）
       ctx.beginPath();
       ctx.moveTo(padding, trackY);
       ctx.lineTo(canvas.width - padding, trackY);
-      ctx.strokeStyle = '#E9E5E2';
+      ctx.strokeStyle = '#C28B5D';
       ctx.lineWidth = 50;
       ctx.stroke();
 
-      // 绘制跑道边界
+      // 绘制边界（黑色，明显）
       ctx.beginPath();
       ctx.moveTo(padding, trackY - 25);
       ctx.lineTo(canvas.width - padding, trackY - 25);
-      ctx.strokeStyle = '#D3D1CB';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#37352F';
+      ctx.lineWidth = 3;
       ctx.stroke();
 
       ctx.beginPath();
       ctx.moveTo(padding, trackY + 25);
       ctx.lineTo(canvas.width - padding, trackY + 25);
-      ctx.strokeStyle = '#D3D1CB';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#37352F';
+      ctx.lineWidth = 3;
       ctx.stroke();
 
-      // 绘制A、B标记
-      ctx.fillStyle = '#37352F';
-      ctx.font = 'bold 18px -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('A', padding, trackY - 35);
-      ctx.fillText('B', canvas.width - padding, trackY - 35);
+      // 绘制轨迹线
+      state.objects.forEach(obj => {
+        drawLinearTrail(obj, padding, trackY, trackWidth);
+      });
 
-      // 绘制距离标记
-      ctx.fillStyle = '#787774';
-      ctx.font = '14px -apple-system, sans-serif';
-      const dist = state.scenarioType === 'stop-go' ? state.distance : state.distance;
-      ctx.fillText(`${dist}公里`, canvas.width / 2, trackY + 50);
+      // A点标签（起点）
+      drawLabel({
+        x: padding,
+        y: trackY - 50,
+        icon: '🚩',
+        text: 'A',
+        color: '#5FB789',
+        bgColor: '#FFFFFF',
+        borderColor: '#5FB789'
+      });
 
-      // 绘制相遇点
-      if (state.met) {
-        const meetX = padding + state.objects[0].position * trackWidth;
-        ctx.beginPath();
-        ctx.arc(meetX, trackY, 10, 0, 2 * Math.PI);
+      // B点标签（终点）
+      drawLabel({
+        x: canvas.width - padding,
+        y: trackY - 50,
+        icon: '🏁',
+        text: 'B',
+        color: '#E03E3E',
+        bgColor: '#FFFFFF',
+        borderColor: '#E03E3E'
+      });
+
+      // 绘制相遇点标签
+      state.meetings.forEach(meeting => {
+        const x = padding + meeting.position * trackWidth;
+
+        // 星星图标
         ctx.fillStyle = '#D4952A';
-        ctx.fill();
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('⭐', x, trackY + 8);
 
+        // 序号
         ctx.fillStyle = '#D4952A';
-        ctx.font = 'bold 12px -apple-system, sans-serif';
-        ctx.fillText('⭐ 相遇', meetX, trackY - 35);
-      }
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText(`①②③④⑤⑥⑦⑧⑨`.charAt(meeting.count - 1), x + 20, trackY - 15);
+      });
 
       // 绘制物体
       state.objects.forEach(obj => {
         const x = padding + obj.position * trackWidth;
         const y = trackY;
 
-        // 绘制物体
+        // 停顿时半透明
+        if (obj.isStopped) {
+          ctx.globalAlpha = 0.5;
+        }
+
+        // 绘制物体（实心圆+深色描边）
         ctx.beginPath();
         ctx.arc(x, y, 14, 0, 2 * Math.PI);
         ctx.fillStyle = obj.color;
         ctx.fill();
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = darkenColor(obj.color, 30);
+        ctx.lineWidth = 3;
         ctx.stroke();
 
-        // 绘制方向箭头
-        ctx.beginPath();
-        if (obj.direction === 'right' || obj.direction === 'clockwise') {
-          ctx.moveTo(x + 22, y);
-          ctx.lineTo(x + 16, y - 5);
-          ctx.lineTo(x + 16, y + 5);
-        } else {
-          ctx.moveTo(x - 22, y);
-          ctx.lineTo(x - 16, y - 5);
-          ctx.lineTo(x - 16, y + 5);
-        }
-        ctx.fillStyle = obj.color;
-        ctx.fill();
+        ctx.globalAlpha = 1.0;
 
-        // 绘制标签
+        // 标签
         ctx.fillStyle = '#37352F';
         ctx.font = 'bold 14px -apple-system, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(obj.name, x, y - 22);
+
+        // 停顿倒计时圈
+        if (obj.isStopped && obj.stopRemaining > 0) {
+          drawStopCountdown(x, y, obj.stopRemaining);
+        }
+
+        // 方向箭头
+        drawDirectionArrow(obj, x, y, obj.direction === 'right' || obj.direction === 'clockwise');
       });
+    }
+
+    // 绘制环形轨迹
+    function drawCircularTrail(obj, centerX, centerY, radius) {
+      if (obj.trail.length < 2) return;
+
+      ctx.beginPath();
+      obj.trail.forEach((point, i) => {
+        const angle = point.position * 2 * Math.PI - Math.PI / 2;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+
+      ctx.strokeStyle = obj.color;
+      ctx.globalAlpha = 0.3;
+      ctx.lineWidth = 2;
+
+      if (obj.trailStyle === 'dashed') {
+        ctx.setLineDash([10, 10]);
+      } else {
+        ctx.setLineDash([]);
+      }
+
+      ctx.stroke();
+      ctx.globalAlpha = 1.0;
+      ctx.setLineDash([]);
+    }
+
+    // 绘制直线轨迹
+    function drawLinearTrail(obj, padding, trackY, trackWidth) {
+      if (obj.trail.length < 2) return;
+
+      ctx.beginPath();
+      obj.trail.forEach((point, i) => {
+        const x = padding + point.position * trackWidth;
+        const y = trackY;
+
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+
+      ctx.strokeStyle = obj.color;
+      ctx.globalAlpha = 0.3;
+      ctx.lineWidth = 2;
+
+      if (obj.trailStyle === 'dashed') {
+        ctx.setLineDash([10, 10]);
+      } else {
+        ctx.setLineDash([]);
+      }
+
+      ctx.stroke();
+      ctx.globalAlpha = 1.0;
+      ctx.setLineDash([]);
+    }
+
+    // 绘制标签
+    function drawLabel({x, y, icon, text, color, bgColor, borderColor}) {
+      ctx.save();
+
+      const padding = 8;
+      const textWidth = ctx.measureText(text).width;
+      const iconWidth = 20;
+      const totalWidth = padding * 2 + iconWidth + textWidth;
+
+      // 背景
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(x - totalWidth / 2, y - 12, totalWidth, 24);
+
+      // 边框
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x - totalWidth / 2, y - 12, totalWidth, 24);
+
+      // 图标
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText(icon, x - totalWidth / 2 + padding, y + 5);
+
+      // 文字
+      ctx.fillStyle = color;
+      ctx.font = 'bold 13px -apple-system, sans-serif';
+      ctx.fillText(text, x - totalWidth / 2 + padding + iconWidth, y + 5);
+
+      ctx.restore();
+    }
+
+    // 绘制停顿倒计时圈
+    function drawStopCountdown(x, y, remaining) {
+      const radius = 22;
+      const maxTime = 5;  // 最大停顿时间
+      const progress = remaining / maxTime;
+
+      // 背景圈
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#E9E5E2';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 进度圈
+      ctx.beginPath();
+      ctx.arc(x, y, radius, -Math.PI / 2, -Math.PI / 2 + (2 * Math.PI * progress));
+      ctx.strokeStyle = '#E03E3E';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 倒计时文字
+      ctx.fillStyle = '#E03E3E';
+      ctx.font = 'bold 10px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${remaining.toFixed(1)}s`, x, y + 40);
+    }
+
+    // 绘制方向箭头
+    function drawDirectionArrow(obj, x, y, isForward) {
+      const arrowLength = 25;
+      const angle = isForward ? 0 : Math.PI;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+
+      // 箭头
+      ctx.beginPath();
+      ctx.moveTo(arrowLength, 0);
+      ctx.lineTo(0, -6);
+      ctx.lineTo(0, 6);
+      ctx.closePath();
+
+      ctx.fillStyle = obj.color;
+      ctx.fill();
+
+      ctx.restore();
     }
 
     // ============================================
@@ -1454,18 +1904,12 @@
         const statusEl = document.getElementById(`status${index}`);
         if (!statusEl) return;
 
-        if (obj.stopRule) {
-          const timeInMinutes = state.time / 60;
-          const cycleTime = obj.stopRule.run + obj.stopRule.stop;
-          const timeInCycle = timeInMinutes % cycleTime;
-
-          if (timeInCycle < obj.stopRule.run) {
-            statusEl.textContent = '🟢 行驶中';
-          } else {
-            statusEl.textContent = '🔴 停顿中';
-          }
+        if (obj.isStopped) {
+          statusEl.textContent = `🔴 停顿中（剩余${obj.stopRemaining.toFixed(1)}秒）`;
+          statusEl.style.color = '#E03E3E';
         } else {
           statusEl.textContent = '🟢 行驶中';
+          statusEl.style.color = '#5FB789';
         }
       });
     }
@@ -1503,7 +1947,15 @@
         document.getElementById('distance').value = preset.config.distance;
       }
 
-      state.objects = preset.config.objects.map(obj => ({...obj}));
+      state.objects = preset.config.objects.map(obj => ({
+        ...obj,
+        laps: 0,
+        trail: [],
+        trailStyle: 'solid',
+        isStopped: false,
+        stopRemaining: 0
+      }));
+
       document.getElementById('objectCount').value = state.objects.length;
 
       renderObjectsConfig();
@@ -1543,7 +1995,14 @@
         config: {
           trackLength: state.trackLength,
           distance: state.distance,
-          objects: state.objects.map(obj => ({...obj}))
+          objects: state.objects.map(obj => ({
+            name: obj.name,
+            speed: obj.speed,
+            color: obj.color,
+            position: obj.position,
+            direction: obj.direction,
+            stopRule: obj.stopRule
+          }))
         },
         createdAt: new Date().toISOString()
       };
@@ -1591,7 +2050,15 @@
         document.getElementById('distance').value = preset.config.distance;
       }
 
-      state.objects = preset.config.objects.map(obj => ({...obj}));
+      state.objects = preset.config.objects.map(obj => ({
+        ...obj,
+        laps: 0,
+        trail: [],
+        trailStyle: 'solid',
+        isStopped: false,
+        stopRemaining: 0
+      }));
+
       document.getElementById('objectCount').value = state.objects.length;
 
       renderObjectsConfig();
