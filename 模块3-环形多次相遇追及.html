@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>模块3:环形多次相遇/追及问题</title>
+  <style>
+    /* ============================================
+       Notion 风格设计系统
+       ============================================ */
+
+    :root {
+      --bg-primary: #F7F6F3;
+      --bg-secondary: #FFFFFF;
+      --bg-tertiary: #EFEBE9;
+      --bg-hover: #E9E5E2;
+
+      --text-primary: #37352F;
+      --text-secondary: #787774;
+      --text-tertiary: #9B9A97;
+
+      --accent-brown: #C28B5D;
+      --accent-orange: #E78F75;
+      --accent-green: #5FB789;
+      --accent-blue: #5E8AD2;
+      --accent-red: #E03E3E;
+      --accent-gold: #D4952A;
+
+      --border-light: #E9E5E2;
+      --border-medium: #D3D1CB;
+      --border-dark: #B8B6B1;
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 8px rgba(0,0,0,0.06);
+      --shadow-lg: 0 8px 16px rgba(0,0,0,0.08);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* 头部 */
+    .header {
+      text-align: center;
+      padding: 32px 0 24px;
+      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    /* 控制栏 */
+    .control-bar {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow-sm);
+      flex-wrap: wrap;
+    }
+
+    .label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .select {
+      padding: 8px 32px 8px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-medium);
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--text-primary);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23787774' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      transition: all 0.2s ease;
+    }
+
+    .select:hover {
+      border-color: var(--accent-brown);
+      background-color: var(--bg-hover);
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input {
+      width: 80px;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-medium);
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--accent-brown);
+      box-shadow: 0 0 0 3px rgba(194, 139, 93, 0.1);
+    }
+
+    .btn {
+      padding: 8px 20px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-medium);
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent-brown);
+    }
+
+    .btn.primary {
+      background: var(--accent-brown);
+      color: white;
+      border-color: var(--accent-brown);
+    }
+
+    .btn.primary:hover {
+      background: #A3764E;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* 数据面板 */
+    .data-panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .data-panel h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .data-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .data-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .data-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-feature-settings: 'tnum';
+    }
+
+    .data-value.highlight {
+      color: var(--accent-brown);
+    }
+
+    /* 双屏布局 */
+    .dual-screen {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .screen-left,
+    .screen-right {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .screen-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .canvas-container {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    /* 验证框 */
+    .verification-box {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 2px solid var(--accent-brown);
+      border-radius: 12px;
+      padding: 24px 32px;
+      box-shadow: var(--shadow-lg);
+      z-index: 1000;
+      min-width: 320px;
+      animation: verificationPopup 0.3s ease;
+    }
+
+    @keyframes verificationPopup {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    .verification-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent-brown);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .verification-formula {
+      font-size: 16px;
+      color: var(--text-primary);
+      text-align: center;
+      margin-bottom: 8px;
+      padding: 12px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+    }
+
+    .verification-detail {
+      font-size: 14px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .verification-close {
+      margin-top: 16px;
+      width: 100%;
+      padding: 10px;
+      background: var(--accent-brown);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .verification-close:hover {
+      background: #A3764E;
+    }
+
+    /* 图例 */
+    .legend {
+      display: flex;
+      gap: 24px;
+      margin-top: 16px;
+      justify-content: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    @media (max-width: 1400px) {
+      .dual-screen {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <div class="header">
+      <h1>模块3:环形多次相遇/追及问题</h1>
+      <p>Circular Meeting & Pursuit Problem • 双屏联动展示环形运动</p>
+    </div>
+
+    <!-- 控制栏 -->
+    <div class="control-bar">
+      <button class="btn primary" id="playPauseBtn">
+        <span id="playPauseIcon">▶</span>
+        <span id="playPauseText">开始演示</span>
+      </button>
+
+      <button class="btn" id="resetBtn">
+        <span>↺</span>
+        <span>重置</span>
+      </button>
+
+      <div style="flex: 1"></div>
+
+      <div class="input-group">
+        <span class="label">运动类型:</span>
+        <select class="select" id="motionType">
+          <option value="meeting">相向而行-相遇</option>
+          <option value="pursuit">同向而行-追及</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <span class="label">出发位置:</span>
+        <select class="select" id="startPosition">
+          <option value="same">同点出发</option>
+          <option value="different">非同点出发</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <span class="label">跑道长度:</span>
+        <input type="number" class="input" id="trackLength" value="400" min="200" max="1000">
+        <span class="label">米</span>
+      </div>
+
+      <div class="input-group">
+        <span class="label">甲速度:</span>
+        <input type="number" class="input" id="speedA" value="5" min="1" max="15">
+        <span class="label">m/s</span>
+      </div>
+
+      <div class="input-group">
+        <span class="label">乙速度:</span>
+        <input type="number" class="input" id="speedB" value="3" min="1" max="15">
+        <span class="label">m/s</span>
+      </div>
+    </div>
+
+    <!-- 数据面板 -->
+    <div class="data-panel">
+      <h3>实时数据</h3>
+      <div class="data-grid">
+        <div class="data-item">
+          <span class="data-label">运动类型</span>
+          <span class="data-value" id="displayMotionType">相向而行-相遇</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">甲速度</span>
+          <span class="data-value" id="displaySpeedA">5.0 m/s</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">乙速度</span>
+          <span class="data-value" id="displaySpeedB">3.0 m/s</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">已用时间</span>
+          <span class="data-value" id="displayTime">0.00 秒</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">甲路程</span>
+          <span class="data-value" id="displayDistanceA">0.0 米</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">乙路程</span>
+          <span class="data-value" id="displayDistanceB">0.0 米</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">甲圈数</span>
+          <span class="data-value highlight" id="displayLapsA">0.0 圈</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">乙圈数</span>
+          <span class="data-value highlight" id="displayLapsB">0.0 圈</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">总计圈数</span>
+          <span class="data-value highlight" id="displayTotalLaps">0.0 圈</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">相遇/追上次数</span>
+          <span class="data-value highlight" id="displayMeetingCount">0 次</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">状态</span>
+          <span class="data-value" id="displayStatus">准备就绪</span>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-color" style="background: var(--accent-red)"></div>
+          <span>甲</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: var(--accent-blue)"></div>
+          <span>乙</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: var(--accent-gold)"></div>
+          <span>⭐ 相遇/追上点</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 双屏布局 -->
+    <div class="dual-screen">
+      <!-- 左侧：环形视图 -->
+      <div class="screen-left">
+        <div class="screen-title">环形视图</div>
+        <div class="canvas-container">
+          <canvas id="canvasLeft" width="650" height="650"></canvas>
+        </div>
+      </div>
+
+      <!-- 右侧：直线展开图 -->
+      <div class="screen-right">
+        <div class="screen-title">直线展开图 (累积圈数)</div>
+        <div class="canvas-container">
+          <canvas id="canvasRight" width="650" height="650"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================
+       状态管理
+       ============================================ */
+
+    const state = {
+      isPlaying: false,
+      isPaused: false,
+      time: 0,  // 秒
+      lastTime: 0,
+      animationId: null,
+
+      // 配置
+      config: {
+        motionType: 'meeting',  // meeting | pursuit
+        startPosition: 'same',  // same | different
+        trackLength: 400,  // 米
+        speedA: 5,  // m/s
+        speedB: 3  // m/s
+      },
+
+      // 运动对象
+      objA: {
+        angle: 0,  // 弧度(0-2π)
+        distance: 0,  // 总路程(米)
+        laps: 0,  // 圈数
+        speed: 5,  // m/s
+        color: '#E03E3E',
+        label: '甲'
+      },
+
+      objB: {
+        angle: Math.PI,  // 弧度(0-2π), 非同点出发时对面
+        distance: 0,  // 总路程(米)
+        laps: 0,  // 圈数
+        speed: 3,  // m/s
+        color: '#5E8AD2',
+        label: '乙'
+      },
+
+      // 相遇/追上记录
+      meetings: [],  // [{time, position, type}]
+
+      // 布局
+      layout: {
+        centerX: 325,
+        centerY: 325,
+        radius: 200
+      }
+    };
+
+    /* ============================================
+       初始化
+       ============================================ */
+
+    function init() {
+      setupCanvas();
+      bindEvents();
+      reset();
+    }
+
+    function setupCanvas() {
+      const canvasLeft = document.getElementById('canvasLeft');
+      const canvasRight = document.getElementById('canvasRight');
+
+      // 设置高分屏
+      const dpr = window.devicePixelRatio || 1;
+
+      [canvasLeft, canvasRight].forEach(canvas => {
+        canvas.width = 650 * dpr;
+        canvas.height = 650 * dpr;
+        canvas.style.width = '650px';
+        canvas.style.height = '650px';
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+      });
+    }
+
+    function bindEvents() {
+      document.getElementById('playPauseBtn').addEventListener('click', togglePlayPause);
+      document.getElementById('resetBtn').addEventListener('click', reset);
+
+      ['motionType', 'startPosition', 'trackLength', 'speedA', 'speedB'].forEach(id => {
+        document.getElementById(id).addEventListener('change', updateConfig);
+      });
+    }
+
+    /* ============================================
+       核心逻辑
+       ============================================ */
+
+    function reset() {
+      stopAnimation();
+
+      state.isPaused = false;
+      state.time = 0;
+      state.meetings = [];
+
+      // 重置对象
+      state.objA.angle = 0;
+      state.objA.distance = 0;
+      state.objA.laps = 0;
+      state.objA.speed = state.config.speedA;
+
+      state.objB.angle = state.config.startPosition === 'same' ? 0 : Math.PI;
+      state.objB.distance = 0;
+      state.objB.laps = 0;
+      state.objB.speed = state.config.speedB;
+
+      updateDisplay();
+      draw();
+      updatePlayPauseButton();
+    }
+
+    function updateConfig() {
+      state.config.motionType = document.getElementById('motionType').value;
+      state.config.startPosition = document.getElementById('startPosition').value;
+      state.config.trackLength = parseFloat(document.getElementById('trackLength').value);
+      state.config.speedA = parseFloat(document.getElementById('speedA').value);
+      state.config.speedB = parseFloat(document.getElementById('speedB').value);
+
+      reset();
+    }
+
+    function togglePlayPause() {
+      if (state.isPlaying && !state.isPaused) {
+        state.isPaused = true;
+      } else if (state.isPlaying && state.isPaused) {
+        state.isPaused = false;
+        state.lastTime = performance.now();
+        state.animationId = requestAnimationFrame(animate);
+      } else {
+        state.isPlaying = true;
+        state.isPaused = false;
+        state.lastTime = performance.now();
+        startAnimation();
+      }
+
+      updatePlayPauseButton();
+    }
+
+    function startAnimation() {
+      state.animationId = requestAnimationFrame(animate);
+    }
+
+    function stopAnimation() {
+      if (state.animationId) {
+        cancelAnimationFrame(state.animationId);
+        state.animationId = null;
+      }
+      state.isPlaying = false;
+      state.isPaused = false;
+    }
+
+    function animate(currentTime) {
+      if (!state.isPlaying || state.isPaused) return;
+
+      const deltaTime = (currentTime - state.lastTime) / 1000;  // 秒
+      state.lastTime = currentTime;
+
+      state.time += deltaTime;
+
+      // 更新位置
+      updatePositions(deltaTime);
+
+      // 检测相遇/追上
+      checkMeetings();
+
+      updateDisplay();
+      draw();
+
+      state.animationId = requestAnimationFrame(animate);
+    }
+
+    function updatePositions(dt) {
+      const circumference = state.config.trackLength;
+
+      // 甲位置更新
+      const distA = state.objA.speed * dt;
+      state.objA.distance += distA;
+      state.objA.laps = state.objA.distance / circumference;
+
+      if (state.config.motionType === 'meeting') {
+        // 相向而行: 甲顺时针, 乙逆时针
+        state.objA.angle += (distA / circumference) * 2 * Math.PI;
+        if (state.objA.angle > 2 * Math.PI) {
+          state.objA.angle -= 2 * Math.PI;
+        }
+      } else {
+        // 同向追及: 都是顺时针
+        state.objA.angle += (distA / circumference) * 2 * Math.PI;
+        if (state.objA.angle > 2 * Math.PI) {
+          state.objA.angle -= 2 * Math.PI;
+        }
+      }
+
+      // 乙位置更新
+      const distB = state.objB.speed * dt;
+      state.objB.distance += distB;
+      state.objB.laps = state.objB.distance / circumference;
+
+      if (state.config.motionType === 'meeting') {
+        // 相向而行: 逆时针
+        state.objB.angle -= (distB / circumference) * 2 * Math.PI;
+        if (state.objB.angle < 0) {
+          state.objB.angle += 2 * Math.PI;
+        }
+      } else {
+        // 同向追及: 顺时针
+        state.objB.angle += (distB / circumference) * 2 * Math.PI;
+        if (state.objB.angle > 2 * Math.PI) {
+          state.objB.angle -= 2 * Math.PI;
+        }
+      }
+    }
+
+    function checkMeetings() {
+      const angleA = state.objA.angle;
+      const angleB = state.objB.angle;
+
+      let isMeeting = false;
+
+      if (state.config.motionType === 'meeting') {
+        // 相向而行: 角度相同即为相遇
+        const diff = Math.abs(angleA - angleB);
+        isMeeting = diff < 0.05 || diff > 2 * Math.PI - 0.05;
+      } else {
+        // 同向追及: 角度相同即为追上
+        const diff = Math.abs(angleA - angleB);
+        isMeeting = diff < 0.05 || diff > 2 * Math.PI - 0.05;
+      }
+
+      // 避免重复记录(1秒内不重复)
+      if (isMeeting) {
+        const lastMeeting = state.meetings[state.meetings.length - 1];
+        if (!lastMeeting || (state.time - lastMeeting.time) > 1) {
+          state.meetings.push({
+            time: state.time,
+            angle: angleA,
+            distanceA: state.objA.distance,
+            distanceB: state.objB.distance,
+            lapsA: state.objA.laps,
+            lapsB: state.objB.laps
+          });
+
+          // 自动暂停并显示验证框
+          state.isPaused = true;
+          showVerificationBox(state.meetings.length);
+          updatePlayPauseButton();
+        }
+      }
+    }
+
+    /* ============================================
+       绘制逻辑
+       ============================================ */
+
+    function draw() {
+      drawLeft();
+      drawRight();
+    }
+
+    function drawLeft() {
+      const canvas = document.getElementById('canvasLeft');
+      const ctx = canvas.getContext('2d');
+      const { centerX, centerY, radius } = state.layout;
+
+      // 清空
+      ctx.clearRect(0, 0, 650, 650);
+
+      // 绘制圆形跑道
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#D3D1CB';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // 绘制内圈装饰
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius - 20, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#E9E5E2';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 绘制外圈装饰
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius + 20, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#E9E5E2';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 绘制相遇/追上点
+      state.meetings.forEach((meeting, index) => {
+        const x = centerX + radius * Math.cos(meeting.angle);
+        const y = centerY + radius * Math.sin(meeting.angle);
+
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, 2 * Math.PI);
+        ctx.fillStyle = '#D4952A';
+        ctx.fill();
+
+        ctx.fillStyle = '#37352F';
+        ctx.font = 'bold 14px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(index + 1, x, y);
+      });
+
+      // 绘制甲
+      const xA = centerX + radius * Math.cos(state.objA.angle);
+      const yA = centerY + radius * Math.sin(state.objA.angle);
+
+      ctx.beginPath();
+      ctx.arc(xA, yA, 15, 0, 2 * Math.PI);
+      ctx.fillStyle = state.objA.color;
+      ctx.fill();
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 12px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('甲', xA, yA);
+
+      // 绘制乙
+      const xB = centerX + radius * Math.cos(state.objB.angle);
+      const yB = centerY + radius * Math.sin(state.objB.angle);
+
+      ctx.beginPath();
+      ctx.arc(xB, yB, 15, 0, 2 * Math.PI);
+      ctx.fillStyle = state.objB.color;
+      ctx.fill();
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 12px -apple-system, sans-serif';
+      ctx.fillText('乙', xB, yB);
+
+      // 绘制中心信息
+      ctx.fillStyle = '#787774';
+      ctx.font = '14px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${state.config.trackLength}米跑道`, centerX, centerY - 10);
+      ctx.fillText(`${state.meetings.length}次相遇`, centerX, centerY + 15);
+    }
+
+    function drawRight() {
+      const canvas = document.getElementById('canvasRight');
+      const ctx = canvas.getContext('2d');
+
+      // 清空
+      ctx.clearRect(0, 0, 650, 650);
+
+      const startX = 80;
+      const endX = 570;
+      const baseY = 150;
+      const barHeight = 40;
+      const barGap = 30;
+
+      // 绘制甲条形图
+      const maxLaps = Math.max(state.objA.laps, state.objB.laps, 5);
+      const scale = (endX - startX) / maxLaps;
+
+      const widthA = state.objA.laps * scale;
+      ctx.fillStyle = state.objA.color;
+      ctx.fillRect(startX, baseY, widthA, barHeight);
+
+      // 甲标签
+      ctx.fillStyle = '#37352F';
+      ctx.font = 'bold 14px -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('甲路程:', startX - 10, baseY + barHeight / 2 + 5);
+
+      // 甲圈数
+      ctx.textAlign = 'left';
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 13px -apple-system, sans-serif';
+      if (widthA > 50) {
+        ctx.fillText(`${state.objA.laps.toFixed(2)}圈`, startX + 10, baseY + barHeight / 2 + 4);
+      }
+
+      // 绘制乙条形图
+      const widthB = state.objB.laps * scale;
+      ctx.fillStyle = state.objB.color;
+      ctx.fillRect(startX, baseY + barHeight + barGap, widthB, barHeight);
+
+      // 乙标签
+      ctx.fillStyle = '#37352F';
+      ctx.font = 'bold 14px -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('乙路程:', startX - 10, baseY + barHeight + barGap + barHeight / 2 + 5);
+
+      // 乙圈数
+      ctx.textAlign = 'left';
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 13px -apple-system, sans-serif';
+      if (widthB > 50) {
+        ctx.fillText(`${state.objB.laps.toFixed(2)}圈`, startX + 10, baseY + barHeight + barGap + barHeight / 2 + 4);
+      }
+
+      // 绘制总计
+      const totalLaps = state.objA.laps + state.objB.laps;
+      const totalY = baseY + (barHeight + barGap) * 2;
+
+      ctx.fillStyle = '#C28B5D';
+      ctx.fillRect(startX, totalY, totalLaps * scale, barHeight);
+
+      ctx.fillStyle = '#37352F';
+      ctx.font = 'bold 14px -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('总计:', startX - 10, totalY + barHeight / 2 + 5);
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 13px -apple-system, sans-serif';
+      if (totalLaps * scale > 50) {
+        ctx.fillText(`${totalLaps.toFixed(2)}圈`, startX + 10, totalY + barHeight / 2 + 4);
+      }
+
+      // 绘制验证公式
+      const formulaY = totalY + barHeight + 50;
+      ctx.textAlign = 'center';
+
+      if (state.meetings.length > 0) {
+        const n = state.meetings.length;
+        if (state.config.motionType === 'meeting') {
+          ctx.font = 'bold 16px -apple-system, sans-serif';
+          ctx.fillStyle = '#C28B5D';
+          ctx.fillText(`验证: ${n}次相遇 = ${n}圈`, (startX + endX) / 2, formulaY);
+        } else {
+          const diffLaps = state.objA.laps - state.objB.laps;
+          ctx.font = 'bold 16px -apple-system, sans-serif';
+          ctx.fillStyle = '#C28B5D';
+          ctx.fillText(`验证: ${n}次追及 = ${diffLaps.toFixed(1)}圈差`, (startX + endX) / 2, formulaY);
+        }
+      }
+
+      // 刻度线
+      ctx.strokeStyle = '#E9E5E2';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= maxLaps; i++) {
+        const x = startX + i * scale;
+        ctx.beginPath();
+        ctx.moveTo(x, baseY - 10);
+        ctx.lineTo(x, totalY + barHeight + 10);
+        ctx.stroke();
+
+        ctx.fillStyle = '#9B9A97';
+        ctx.font = '12px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${i}圈`, x, totalY + barHeight + 25);
+      }
+    }
+
+    /* ============================================
+       验证框
+       ============================================ */
+
+    function showVerificationBox(count) {
+      const existingBox = document.querySelector('.verification-box');
+      if (existingBox) existingBox.remove();
+
+      const box = document.createElement('div');
+      box.className = 'verification-box';
+
+      const type = state.config.motionType === 'meeting' ? '相遇' : '追上';
+      const totalLaps = state.objA.laps + state.objB.laps;
+
+      let formula = '';
+      let detail = '';
+
+      if (state.config.motionType === 'meeting') {
+        formula = `第${count}次相遇`;
+        detail = `总计跑过 ${totalLaps.toFixed(2)}圈 = ${count}圈 ✅`;
+      } else {
+        const diffLaps = state.objA.laps - state.objB.laps;
+        formula = `第${count}次追及`;
+        detail = `甲比乙多跑 ${diffLaps.toFixed(2)}圈 = ${count}圈 ✅`;
+      }
+
+      box.innerHTML = `
+        <div class="verification-title">${formula}</div>
+        <div class="verification-formula">
+          ${detail}
+        </div>
+        <div class="verification-detail">
+          甲路程: ${state.objA.laps.toFixed(2)}圈
+        </div>
+        <div class="verification-detail">
+          乙路程: ${state.objB.laps.toFixed(2)}圈
+        </div>
+        <div class="verification-detail" style="margin-top: 8px">
+          用时: ${state.time.toFixed(2)} 秒
+        </div>
+        <button class="verification-close" onclick="closeVerificationBox()">
+          继续演示
+        </button>
+      `;
+
+      document.body.appendChild(box);
+    }
+
+    function closeVerificationBox() {
+      const box = document.querySelector('.verification-box');
+      if (box) box.remove();
+    }
+
+    /* ============================================
+       显示更新
+       ============================================ */
+
+    function updateDisplay() {
+      // 运动类型
+      const typeText = state.config.motionType === 'meeting' ? '相向而行-相遇' : '同向而行-追及';
+      document.getElementById('displayMotionType').textContent = typeText;
+
+      // 速度
+      document.getElementById('displaySpeedA').textContent = `${state.config.speedA.toFixed(1)} m/s`;
+      document.getElementById('displaySpeedB').textContent = `${state.config.speedB.toFixed(1)} m/s`;
+
+      // 时间
+      document.getElementById('displayTime').textContent = `${state.time.toFixed(2)} 秒`;
+
+      // 路程
+      document.getElementById('displayDistanceA').textContent = `${state.objA.distance.toFixed(1)} 米`;
+      document.getElementById('displayDistanceB').textContent = `${state.objB.distance.toFixed(1)} 米`;
+
+      // 圈数
+      document.getElementById('displayLapsA').textContent = `${state.objA.laps.toFixed(2)} 圈`;
+      document.getElementById('displayLapsB').textContent = `${state.objB.laps.toFixed(2)} 圈`;
+
+      // 总计圈数
+      const totalLaps = state.objA.laps + state.objB.laps;
+      document.getElementById('displayTotalLaps').textContent = `${totalLaps.toFixed(2)} 圈`;
+
+      // 相遇次数
+      document.getElementById('displayMeetingCount').textContent = `${state.meetings.length} 次`;
+
+      // 状态
+      let status = '准备就绪';
+      if (state.isPaused) {
+        status = '已暂停';
+      } else if (state.isPlaying) {
+        status = '运动中...';
+      }
+      document.getElementById('displayStatus').textContent = status;
+    }
+
+    function updatePlayPauseButton() {
+      const btn = document.getElementById('playPauseBtn');
+      const icon = document.getElementById('playPauseIcon');
+      const text = document.getElementById('playPauseText');
+
+      if (state.isPaused) {
+        icon.textContent = '▶';
+        text.textContent = '继续';
+        btn.classList.add('primary');
+      } else if (state.isPlaying) {
+        icon.textContent = '⏸';
+        text.textContent = '暂停';
+        btn.classList.remove('primary');
+      } else {
+        icon.textContent = '▶';
+        text.textContent = '开始演示';
+        btn.classList.add('primary');
+      }
+    }
+
+    /* ============================================
+       启动
+       ============================================ */
+
+    window.addEventListener('load', init);
+    window.closeVerificationBox = closeVerificationBox;
+  </script>
+</body>
+</html>

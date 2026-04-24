@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>模块2:直线单次追及问题</title>
+  <style>
+    /* ============================================
+       Notion 风格设计系统
+       ============================================ */
+
+    :root {
+      --bg-primary: #F7F6F3;
+      --bg-secondary: #FFFFFF;
+      --bg-tertiary: #EFEBE9;
+      --bg-hover: #E9E5E2;
+
+      --text-primary: #37352F;
+      --text-secondary: #787774;
+      --text-tertiary: #9B9A97;
+
+      --accent-brown: #C28B5D;
+      --accent-orange: #E78F75;
+      --accent-green: #5FB789;
+      --accent-blue: #5E8AD2;
+      --accent-red: #E03E3E;
+      --accent-gold: #D4952A;
+
+      --border-light: #E9E5E2;
+      --border-medium: #D3D1CB;
+      --border-dark: #B8B6B1;
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 8px rgba(0,0,0,0.06);
+      --shadow-lg: 0 8px 16px rgba(0,0,0,0.08);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* 头部 */
+    .header {
+      text-align: center;
+      padding: 32px 0 24px;
+      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    /* 控制栏 */
+    .control-bar {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .select {
+      padding: 8px 32px 8px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-medium);
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--text-primary);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23787774' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      transition: all 0.2s ease;
+    }
+
+    .select:hover {
+      border-color: var(--accent-brown);
+      background-color: var(--bg-hover);
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input {
+      width: 80px;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-medium);
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--accent-brown);
+      box-shadow: 0 0 0 3px rgba(194, 139, 93, 0.1);
+    }
+
+    .btn {
+      padding: 8px 20px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-medium);
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent-brown);
+    }
+
+    .btn.primary {
+      background: var(--accent-brown);
+      color: white;
+      border-color: var(--accent-brown);
+    }
+
+    .btn.primary:hover {
+      background: #A3764E;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* 数据面板 */
+    .data-panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .data-panel h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .data-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .data-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .data-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-feature-settings: 'tnum';
+    }
+
+    .data-value.highlight {
+      color: var(--accent-brown);
+    }
+
+    /* Canvas 容器 */
+    .canvas-container {
+      position: relative;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* 验证框 */
+    .verification-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 2px solid var(--accent-brown);
+      border-radius: 12px;
+      padding: 24px 32px;
+      box-shadow: var(--shadow-lg);
+      z-index: 100;
+      min-width: 300px;
+      animation: verificationPopup 0.3s ease;
+    }
+
+    @keyframes verificationPopup {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    .verification-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent-brown);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .verification-formula {
+      font-size: 16px;
+      color: var(--text-primary);
+      text-align: center;
+      margin-bottom: 8px;
+      padding: 12px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+    }
+
+    .verification-detail {
+      font-size: 14px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .verification-close {
+      margin-top: 16px;
+      width: 100%;
+      padding: 10px;
+      background: var(--accent-brown);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .verification-close:hover {
+      background: #A3764E;
+    }
+
+    /* 图例 */
+    .legend {
+      display: flex;
+      gap: 24px;
+      margin-top: 16px;
+      justify-content: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <div class="header">
+      <h1>模块2:直线单次追及问题</h1>
+      <p>Linear Single Pursuit Problem • 平行跑道展示追及过程</p>
+    </div>
+
+    <!-- 控制栏 -->
+    <div class="control-bar">
+      <button class="btn primary" id="playPauseBtn">
+        <span id="playPauseIcon">▶</span>
+        <span id="playPauseText">开始演示</span>
+      </button>
+
+      <button class="btn" id="resetBtn">
+        <span>↺</span>
+        <span>重置</span>
+      </button>
+
+      <div style="flex: 1"></div>
+
+      <div class="input-group">
+        <span class="label">跑道长度:</span>
+        <input type="number" class="input" id="trackLength" value="100" min="50" max="200">
+        <span class="label">米</span>
+      </div>
+
+      <div class="input-group">
+        <span class="label">甲速度:</span>
+        <input type="number" class="input" id="speedA" value="8" min="1" max="20">
+        <span class="label">km/h</span>
+      </div>
+
+      <div class="input-group">
+        <span class="label">乙速度:</span>
+        <input type="number" class="input" id="speedB" value="6" min="1" max="20">
+        <span class="label">km/h</span>
+      </div>
+
+      <div class="input-group">
+        <span class="label">初始差距:</span>
+        <input type="number" class="input" id="initialGap" value="20" min="5" max="50">
+        <span class="label">米</span>
+      </div>
+    </div>
+
+    <!-- 数据面板 -->
+    <div class="data-panel">
+      <h3>实时数据</h3>
+      <div class="data-grid">
+        <div class="data-item">
+          <span class="data-label">甲速度</span>
+          <span class="data-value" id="displaySpeedA">8.0 km/h</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">乙速度</span>
+          <span class="data-value" id="displaySpeedB">6.0 km/h</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">初始差距</span>
+          <span class="data-value highlight" id="displayInitialGap">20.0 米</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">已用时间</span>
+          <span class="data-value" id="displayTime">0.00 分钟</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">甲路程</span>
+          <span class="data-value" id="displayDistanceA">0.0 米</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">乙路程</span>
+          <span class="data-value" id="displayDistanceB">0.0 米</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">预计追上时间</span>
+          <span class="data-value highlight" id="displayPredictedTime">1.00 分钟</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">状态</span>
+          <span class="data-value" id="displayStatus">准备就绪</span>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-color" style="background: var(--accent-red)"></div>
+          <span>甲(快)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: var(--accent-blue)"></div>
+          <span>乙(慢)</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: var(--accent-gold)"></div>
+          <span>初始差距</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: var(--accent-green)"></div>
+          <span>共同路程</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canvas 容器 -->
+    <div class="canvas-container" id="canvasContainer">
+      <canvas id="canvas"></canvas>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================
+       状态管理
+       ============================================ */
+
+    const state = {
+      isPlaying: false,
+      isPaused: false,
+      isFinished: false,
+      time: 0,  // 分钟
+      lastTime: 0,
+      animationId: null,
+
+      // 配置
+      config: {
+        trackLength: 100,  // 米
+        speedA: 8,  // km/h
+        speedB: 6,  // km/h
+        initialGap: 20  // 米
+      },
+
+      // 运动对象
+      objA: {
+        position: 0,  // 米(从起点开始)
+        speed: 0,  // 米/分钟
+        distance: 0,  // 总路程
+        color: '#E03E3E',
+        label: '甲'
+      },
+
+      objB: {
+        position: 0,  // 米(从起点+初始差距开始)
+        speed: 0,  // 米/分钟
+        distance: 0,  // 总路程
+        color: '#5E8AD2',
+        label: '乙'
+      },
+
+      // 布局
+      trackA: {
+        baseY: 150,
+        startY: 80,
+        endX: 1320
+      },
+      trackB: {
+        baseY: 350,
+        startY: 80,
+        endX: 1320
+      },
+
+      // 追上检测
+      caughtUp: false,
+      catchUpPosition: null  // 追上时的位置
+    };
+
+    /* ============================================
+       初始化
+       ============================================ */
+
+    function init() {
+      setupCanvas();
+      bindEvents();
+      reset();
+    }
+
+    function setupCanvas() {
+      const canvas = document.getElementById('canvas');
+      const container = document.getElementById('canvasContainer');
+
+      canvas.width = 1400;
+      canvas.height = 500;
+    }
+
+    function bindEvents() {
+      document.getElementById('playPauseBtn').addEventListener('click', togglePlayPause);
+      document.getElementById('resetBtn').addEventListener('click', reset);
+
+      // 参数输入
+      ['trackLength', 'speedA', 'speedB', 'initialGap'].forEach(id => {
+        document.getElementById(id).addEventListener('change', updateConfig);
+      });
+    }
+
+    /* ============================================
+       核心逻辑
+       ============================================ */
+
+    function reset() {
+      stopAnimation();
+
+      state.isPaused = false;
+      state.isFinished = false;
+      state.time = 0;
+      state.caughtUp = false;
+      state.catchUpPosition = null;
+
+      // 重置对象位置
+      state.objA.position = 0;
+      state.objA.distance = 0;
+
+      state.objB.position = state.config.initialGap;
+      state.objB.distance = 0;
+
+      // 转换速度: km/h -> 米/分钟
+      state.objA.speed = state.config.speedA * 1000 / 60;
+      state.objB.speed = state.config.speedB * 1000 / 60;
+
+      updateDisplay();
+      draw();
+      updatePlayPauseButton();
+    }
+
+    function updateConfig() {
+      state.config.trackLength = parseFloat(document.getElementById('trackLength').value);
+      state.config.speedA = parseFloat(document.getElementById('speedA').value);
+      state.config.speedB = parseFloat(document.getElementById('speedB').value);
+      state.config.initialGap = parseFloat(document.getElementById('initialGap').value);
+
+      reset();
+    }
+
+    function togglePlayPause() {
+      if (state.isFinished) {
+        reset();
+        state.isPlaying = true;
+        state.isPaused = false;
+        startAnimation();
+      } else if (state.isPlaying && !state.isPaused) {
+        state.isPaused = true;
+      } else if (state.isPlaying && state.isPaused) {
+        state.isPaused = false;
+        state.lastTime = performance.now();
+        state.animationId = requestAnimationFrame(animate);
+      } else {
+        state.isPlaying = true;
+        state.isPaused = false;
+        state.lastTime = performance.now();
+        startAnimation();
+      }
+
+      updatePlayPauseButton();
+    }
+
+    function startAnimation() {
+      state.animationId = requestAnimationFrame(animate);
+    }
+
+    function stopAnimation() {
+      if (state.animationId) {
+        cancelAnimationFrame(state.animationId);
+        state.animationId = null;
+      }
+      state.isPlaying = false;
+      state.isPaused = false;
+    }
+
+    function animate(currentTime) {
+      if (!state.isPlaying || state.isPaused) return;
+
+      const deltaTime = (currentTime - state.lastTime) / 1000 / 60;  // 转换为分钟
+      state.lastTime = currentTime;
+
+      // 更新时间
+      state.time += deltaTime;
+
+      // 更新位置
+      const prevPosA = state.objA.position;
+      const prevPosB = state.objB.position;
+
+      state.objA.position += state.objA.speed * deltaTime;
+      state.objB.position += state.objB.speed * deltaTime;
+
+      state.objA.distance = state.objA.position;
+      state.objB.distance = state.objB.position;
+
+      // 检测是否追上
+      if (!state.caughtUp && state.objA.position >= state.objB.position) {
+        state.caughtUp = true;
+        state.catchUpPosition = state.objA.position;
+        state.isFinished = true;
+
+        // 显示验证框
+        showVerificationBox();
+        stopAnimation();
+        updatePlayPauseButton();
+      }
+
+      // 边界检测(超出跑道)
+      if (state.objA.position > state.config.trackLength ||
+          state.objB.position > state.config.trackLength) {
+        state.isFinished = true;
+        stopAnimation();
+        updatePlayPauseButton();
+      }
+
+      updateDisplay();
+      draw();
+
+      if (!state.isFinished) {
+        state.animationId = requestAnimationFrame(animate);
+      }
+    }
+
+    /* ============================================
+       绘制逻辑
+       ============================================ */
+
+    function draw() {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+
+      // 清空画布
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 绘制平行跑道
+      drawTracks(ctx);
+
+      // 绘制初始差距标记
+      if (!state.caughtUp) {
+        drawInitialGap(ctx);
+      }
+
+      // 绘制共同路程标记
+      if (state.caughtUp) {
+        drawCommonDistance(ctx);
+      }
+
+      // 绘制追上点垂直虚线
+      if (state.caughtUp && state.catchUpPosition !== null) {
+        drawCatchUpLine(ctx);
+      }
+
+      // 绘制运动对象
+      drawObject(ctx, state.objA, state.trackA);
+      drawObject(ctx, state.objB, state.trackB);
+    }
+
+    function drawTracks(ctx) {
+      const startX = state.trackA.startY;
+      const endX = state.trackA.endX;
+
+      // 甲跑道(上)
+      ctx.beginPath();
+      ctx.moveTo(startX, state.trackA.baseY);
+      ctx.lineTo(endX, state.trackA.baseY);
+      ctx.strokeStyle = '#D3D1CB';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 跑道标签
+      ctx.fillStyle = '#787774';
+      ctx.font = '14px -apple-system, sans-serif';
+      ctx.fillText('甲跑道(快)', startX, state.trackA.baseY - 15);
+
+      // 乙跑道(下)
+      ctx.beginPath();
+      ctx.moveTo(startX, state.trackB.baseY);
+      ctx.lineTo(endX, state.trackB.baseY);
+      ctx.strokeStyle = '#D3D1CB';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.fillStyle = '#787774';
+      ctx.fillText('乙跑道(慢)', startX, state.trackB.baseY + 25);
+
+      // 起点线
+      ctx.beginPath();
+      ctx.moveTo(startX, state.trackA.baseY - 30);
+      ctx.lineTo(startX, state.trackB.baseY + 30);
+      ctx.strokeStyle = '#B8B6B1';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 终点线
+      const endTrackX = startX + (state.config.trackLength / state.config.trackLength) * (endX - startX);
+      ctx.beginPath();
+      ctx.moveTo(endTrackX, state.trackA.baseY - 30);
+      ctx.lineTo(endTrackX, state.trackB.baseY + 30);
+      ctx.strokeStyle = '#B8B6B1';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 距离刻度
+      ctx.fillStyle = '#9B9A97';
+      ctx.font = '12px -apple-system, sans-serif';
+      ctx.fillText('0米', startX - 10, state.trackB.baseY + 45);
+      ctx.fillText(`${state.config.trackLength}米`, endTrackX - 20, state.trackB.baseY + 45);
+    }
+
+    function drawInitialGap(ctx) {
+      const startX = state.trackA.startY;
+      const gapEndX = startX + (state.config.initialGap / state.config.trackLength) * (state.trackA.endX - startX);
+
+      // 在甲跑道画初始差距
+      const y = state.trackA.baseY - 40;
+
+      ctx.beginPath();
+      ctx.moveTo(startX, y);
+      ctx.lineTo(gapEndX, y);
+      ctx.strokeStyle = '#D4952A';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 箭头
+      drawArrowHead(ctx, startX, y, 'right');
+      drawArrowHead(ctx, gapEndX, y, 'left');
+
+      // 标签
+      ctx.fillStyle = '#D4952A';
+      ctx.font = 'bold 13px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`初始差距: ${state.config.initialGap}米`, (startX + gapEndX) / 2, y - 10);
+      ctx.textAlign = 'left';
+    }
+
+    function drawCommonDistance(ctx) {
+      const startX = state.trackA.startY;
+      const catchUpX = startX + (state.catchUpPosition / state.config.trackLength) * (state.trackA.endX - startX);
+
+      // 在乙跑道画共同路程
+      const y = state.trackB.baseY + 40;
+
+      ctx.beginPath();
+      ctx.moveTo(startX, y);
+      ctx.lineTo(catchUpX, y);
+      ctx.strokeStyle = '#5FB789';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 箭头
+      drawArrowHead(ctx, startX, y, 'right');
+      drawArrowHead(ctx, catchUpX, y, 'left');
+
+      // 标签
+      ctx.fillStyle = '#5FB789';
+      ctx.font = 'bold 13px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`共同路程: ${state.objB.distance.toFixed(1)}米`, (startX + catchUpX) / 2, y + 20);
+      ctx.textAlign = 'left';
+    }
+
+    function drawCatchUpLine(ctx) {
+      const startX = state.trackA.startY;
+      const catchUpX = startX + (state.catchUpPosition / state.config.trackLength) * (state.trackA.endX - startX);
+
+      // 垂直虚线贯穿两条跑道
+      ctx.beginPath();
+      ctx.moveTo(catchUpX, state.trackA.baseY - 50);
+      ctx.lineTo(catchUpX, state.trackB.baseY + 50);
+      ctx.strokeStyle = '#E03E3E';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 标记
+      ctx.fillStyle = '#E03E3E';
+      ctx.font = 'bold 14px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('⭐ 追上点', catchUpX, state.trackA.baseY - 60);
+      ctx.textAlign = 'left';
+    }
+
+    function drawObject(ctx, obj, track) {
+      const startX = track.startY;
+      const x = startX + (obj.position / state.config.trackLength) * (track.endX - startX);
+      const y = track.baseY;
+
+      // 绘制对象(圆形)
+      ctx.beginPath();
+      ctx.arc(x, y, 12, 0, Math.PI * 2);
+      ctx.fillStyle = obj.color;
+      ctx.fill();
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 标签
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 12px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(obj.label, x, y + 4);
+      ctx.textAlign = 'left';
+    }
+
+    function drawArrowHead(ctx, x, y, direction) {
+      const size = 8;
+      ctx.beginPath();
+
+      if (direction === 'right') {
+        ctx.moveTo(x, y);
+        ctx.lineTo(x - size, y - size / 2);
+        ctx.lineTo(x - size, y + size / 2);
+      } else {
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + size, y - size / 2);
+        ctx.lineTo(x + size, y + size / 2);
+      }
+
+      ctx.closePath();
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.fill();
+    }
+
+    /* ============================================
+       验证框
+       ============================================ */
+
+    function showVerificationBox() {
+      const container = document.getElementById('canvasContainer');
+      const existingBox = container.querySelector('.verification-box');
+      if (existingBox) existingBox.remove();
+
+      const box = document.createElement('div');
+      box.className = 'verification-box';
+
+      const distanceA = state.objA.distance.toFixed(1);
+      const distanceB = state.objB.distance.toFixed(1);
+      const gap = state.config.initialGap;
+      const time = state.time.toFixed(2);
+
+      box.innerHTML = `
+        <div class="verification-title">✅ 成功追上!</div>
+        <div class="verification-formula">
+          甲路程 = 初始差距 + 乙路程
+        </div>
+        <div class="verification-detail">
+          ${distanceA}米 = ${gap}米 + ${distanceB}米
+        </div>
+        <div class="verification-detail" style="margin-top: 8px">
+          用时: ${time} 分钟
+        </div>
+        <button class="verification-close" onclick="closeVerificationBox()">
+          继续演示
+        </button>
+      `;
+
+      container.appendChild(box);
+    }
+
+    function closeVerificationBox() {
+      const container = document.getElementById('canvasContainer');
+      const box = container.querySelector('.verification-box');
+      if (box) box.remove();
+    }
+
+    /* ============================================
+       显示更新
+       ============================================ */
+
+    function updateDisplay() {
+      // 速度
+      document.getElementById('displaySpeedA').textContent = `${state.config.speedA.toFixed(1)} km/h`;
+      document.getElementById('displaySpeedB').textContent = `${state.config.speedB.toFixed(1)} km/h`;
+
+      // 初始差距
+      document.getElementById('displayInitialGap').textContent = `${state.config.initialGap.toFixed(1)} 米`;
+
+      // 时间
+      document.getElementById('displayTime').textContent = `${state.time.toFixed(2)} 分钟`;
+
+      // 路程
+      document.getElementById('displayDistanceA').textContent = `${state.objA.distance.toFixed(1)} 米`;
+      document.getElementById('displayDistanceB').textContent = `${state.objB.distance.toFixed(1)} 米`;
+
+      // 预计追上时间
+      const relativeSpeed = (state.config.speedA - state.config.speedB) * 1000 / 60;  // 米/分钟
+      const predictedTime = state.config.initialGap / relativeSpeed;
+      document.getElementById('displayPredictedTime').textContent = `${predictedTime.toFixed(2)} 分钟`;
+
+      // 状态
+      let status = '准备就绪';
+      if (state.isFinished && state.caughtUp) {
+        status = '✅ 已追上';
+      } else if (state.isFinished) {
+        status = '超出跑道';
+      } else if (state.isPaused) {
+        status = '已暂停';
+      } else if (state.isPlaying) {
+        status = '追及中...';
+      }
+      document.getElementById('displayStatus').textContent = status;
+    }
+
+    function updatePlayPauseButton() {
+      const btn = document.getElementById('playPauseBtn');
+      const icon = document.getElementById('playPauseIcon');
+      const text = document.getElementById('playPauseText');
+
+      if (state.isPaused) {
+        icon.textContent = '▶';
+        text.textContent = '继续';
+        btn.classList.add('primary');
+      } else if (state.isPlaying) {
+        icon.textContent = '⏸';
+        text.textContent = '暂停';
+        btn.classList.remove('primary');
+      } else if (state.isFinished) {
+        icon.textContent = '↺';
+        text.textContent = '重新开始';
+        btn.classList.add('primary');
+      } else {
+        icon.textContent = '▶';
+        text.textContent = '开始演示';
+        btn.classList.add('primary');
+      }
+    }
+
+    /* ============================================
+       启动
+       ============================================ */
+
+    window.addEventListener('load', init);
+    window.closeVerificationBox = closeVerificationBox;
+  </script>
+</body>
+</html>
