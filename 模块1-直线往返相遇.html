@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>模块1:直线往返相遇问题</title>
+  <style>
+    /* ============================================
+       Notion 风格设计系统
+       ============================================ */
+
+    :root {
+      --bg-primary: #F7F6F3;
+      --bg-secondary: #FFFFFF;
+      --bg-tertiary: #EFEBE9;
+      --bg-hover: #E9E5E2;
+
+      --text-primary: #37352F;
+      --text-secondary: #787774;
+      --text-tertiary: #9B9A97;
+
+      --accent-brown: #C28B5D;
+      --accent-orange: #E78F75;
+      --accent-green: #5FB789;
+      --accent-blue: #5E8AD2;
+      --accent-red: #E03E3E;
+      --accent-gold: #D4952A;
+
+      --border-light: #E9E5E2;
+      --border-medium: #D3D1CB;
+      --border-dark: #B8B6B1;
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 8px rgba(0,0,0,0.06);
+      --shadow-lg: 0 8px 16px rgba(0,0,0,0.08);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container {
+      max-width: 1800px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* 头部 */
+    .header {
+      text-align: center;
+      padding: 32px 0 24px;
+      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    /* 控制栏 */
+    .control-bar {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow-sm);
+      flex-wrap: wrap;
+    }
+
+    .label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .select {
+      padding: 8px 32px 8px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-medium);
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--text-primary);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23787774' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      transition: all 0.2s ease;
+    }
+
+    .select:hover {
+      border-color: var(--accent-brown);
+      background-color: var(--bg-hover);
+    }
+
+    .btn {
+      padding: 8px 20px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-medium);
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent-brown);
+    }
+
+    .btn.primary {
+      background: var(--accent-brown);
+      color: white;
+      border-color: var(--accent-brown);
+    }
+
+    .btn.primary:hover {
+      background: #A3764E;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* 数据面板 */
+    .data-panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+      width: 320px;  /* 增加宽度，保证图例不换行 */
+      flex-shrink: 0;  /* 不压缩 */
+    }
+
+    .data-panel h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .data-grid {
+      display: grid;
+      grid-template-columns: 1fr;  /* 单列布局 */
+      gap: 16px;
+    }
+
+    .data-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .data-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .data-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-feature-settings: 'tnum';
+    }
+
+    .data-value.highlight {
+      color: var(--accent-brown);
+    }
+
+    /* Canvas 容器 */
+    .canvas-container {
+      position: relative;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* 验证框 */
+    .verification-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 2px solid var(--accent-brown);
+      border-radius: 12px;
+      padding: 24px 32px;
+      box-shadow: var(--shadow-lg);
+      z-index: 100;
+      min-width: 350px;
+      animation: verificationPopup 0.3s ease;
+    }
+
+    @keyframes verificationPopup {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    .verification-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent-brown);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .verification-formula {
+      font-size: 16px;
+      color: var(--text-primary);
+      text-align: center;
+      margin-bottom: 8px;
+      padding: 12px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .verification-detail {
+      font-size: 14px;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .verification-close {
+      margin-top: 16px;
+      width: 100%;
+      padding: 10px;
+      background: var(--accent-brown);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .verification-close:hover {
+      background: #A3764E;
+    }
+
+    /* 图例 */
+    .legend {
+      display: flex;
+      gap: 24px;
+      margin-top: 16px;
+      justify-content: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <div class="header">
+      <h1>模块1:直线往返相遇问题</h1>
+      <p>Linear Round-Trip Meeting Problem • 验证(2n-1)S和2nS公式</p>
+    </div>
+
+    <!-- 控制栏 -->
+    <div class="control-bar">
+      <button class="btn primary" id="playPauseBtn">
+        <span id="playPauseIcon">▶</span>
+        <span id="playPauseText">开始演示</span>
+      </button>
+
+      <button class="btn" id="resetBtn">
+        <span>↺</span>
+        <span>重置</span>
+      </button>
+
+      <div style="flex: 1"></div>
+
+      <div class="input-group">
+        <span class="label">出发模式:</span>
+        <select class="select" id="startMode">
+          <option value="two-ends">两端出发</option>
+          <option value="same-end">同端出发</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <span class="label">两地距离(S):</span>
+        <input type="number" class="input" id="totalDistance" value="100" min="50" max="500" style="width: 80px; padding: 8px 12px; border: 1px solid var(--border-medium); border-radius: 6px;">
+        <span class="label">米</span>
+      </div>
+
+      <div class="input-group">
+        <span class="label">甲速度:</span>
+        <input type="number" class="input" id="speedA" value="5" min="1" max="20" style="width: 80px; padding: 8px 12px; border: 1px solid var(--border-medium); border-radius: 6px;">
+        <span class="label">m/s</span>
+      </div>
+
+      <div class="input-group">
+        <span class="label">乙速度:</span>
+        <input type="number" class="input" id="speedB" value="3" min="1" max="20" style="width: 80px; padding: 8px 12px; border: 1px solid var(--border-medium); border-radius: 6px;">
+        <span class="label">m/s</span>
+      </div>
+    </div>
+
+    <!-- 数据面板 + Canvas 容器（并排布局） -->
+    <div style="display: flex; gap: 20px; align-items: flex-start;">
+      <!-- 数据面板 -->
+      <div class="data-panel">
+        <h3>实时数据</h3>
+        <div class="data-grid">
+          <div class="data-item">
+            <span class="data-label">出发模式</span>
+            <span class="data-value" id="displayMode">两端出发</span>
+          </div>
+          <div class="data-item">
+            <span class="data-label">甲速度</span>
+            <span class="data-value" id="displaySpeedA">5.0 m/s</span>
+          </div>
+          <div class="data-item">
+            <span class="data-label">乙速度</span>
+            <span class="data-value" id="displaySpeedB">3.0 m/s</span>
+          </div>
+          <div class="data-item">
+            <span class="data-label">相遇次数</span>
+            <span class="data-value highlight" id="displayMeetingCount">0 次</span>
+          </div>
+          <div class="data-item">
+            <span class="data-label">当前区间</span>
+            <span class="data-value highlight" id="displayCurrentInterval">准备开始</span>
+          </div>
+        </div>
+
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-color" style="background: var(--accent-red)"></div>
+            <span>甲(红色)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background: var(--accent-blue)"></div>
+            <span>乙(蓝色)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background: var(--accent-gold)"></div>
+            <span>⭐ 相遇点</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Canvas 容器 -->
+      <div class="canvas-container" id="canvasContainer">
+        <canvas id="canvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================
+       状态管理
+       ============================================ */
+
+    const state = {
+      isPlaying: false,
+      isPaused: false,
+      time: 0,  // 秒
+      lastTime: 0,
+      animationId: null,
+      lastMeetingTime: 0,  // 上次相遇时间(防止重复触发)
+
+      // 配置
+      config: {
+        startMode: 'two-ends',  // two-ends | same-end
+        totalDistance: 100,  // 米
+        speedA: 5,  // m/s
+        speedB: 3  // m/s
+      },
+
+      // 运动对象
+      objA: {
+        position: 0,  // 米(0-1表示相对位置)
+        direction: 1,  // 1=向右, -1=向左
+        speed: 5,  // m/s
+        distance: 0,  // 总路程(米)
+        color: '#E03E3E',
+        label: '甲'
+      },
+
+      objB: {
+        position: 1,  // 米(两端出发时从1开始)
+        direction: -1,  // -1=向左
+        speed: 3,  // m/s
+        distance: 0,  // 总路程(米)
+        color: '#5E8AD2',
+        label: '乙'
+      },
+
+      // 相遇区间记录
+      intervals: [],  // [{n, distanceA, distanceB, total, trailA, trailB}]
+
+      // 当前正在记录的区间
+      currentInterval: null,
+
+      // 布局
+      layout: {
+        startX: 100,
+        endX: 1100,  // 轨道长度
+        baseY: 100,
+        intervalHeight: 150,  // 每个区间高度（阶梯式）
+        trackAOffset: 30,  // 甲轨道偏移
+        trackBOffset: 90   // 乙轨道偏移
+      }
+    };
+
+    /* ============================================
+       初始化
+       ============================================ */
+
+    function init() {
+      setupCanvas();
+      bindEvents();
+      reset();
+    }
+
+    function setupCanvas() {
+      const canvas = document.getElementById('canvas');
+      const container = document.getElementById('canvasContainer');
+
+      // 阶梯式布局：最多4个区间，每个150px + 间隙100px + 实时动画150px + 底部padding
+      // 总高度约：150 + 100 + 4*150 + 100 = 950px
+      canvas.width = 1600;
+      canvas.height = 950;  // 调整高度，适配4个快照
+    }
+
+    function bindEvents() {
+      document.getElementById('playPauseBtn').addEventListener('click', togglePlayPause);
+      document.getElementById('resetBtn').addEventListener('click', reset);
+
+      // 使用 input 事件实时监听参数变化
+      document.getElementById('startMode').addEventListener('change', () => {
+        state.config.startMode = document.getElementById('startMode').value;
+        reset();
+      });
+
+      document.getElementById('totalDistance').addEventListener('input', () => {
+        state.config.totalDistance = parseFloat(document.getElementById('totalDistance').value) || 100;
+        updateDisplay();
+        draw();  // draw() 已经包含清空逻辑
+      });
+
+      document.getElementById('speedA').addEventListener('input', () => {
+        state.config.speedA = parseFloat(document.getElementById('speedA').value) || 5;
+        state.objA.speed = state.config.speedA;
+        updateDisplay();
+      });
+
+      document.getElementById('speedB').addEventListener('input', () => {
+        state.config.speedB = parseFloat(document.getElementById('speedB').value) || 3;
+        state.objB.speed = state.config.speedB;
+        updateDisplay();
+      });
+    }
+
+    /* ============================================
+       核心逻辑
+       ============================================ */
+
+    function reset() {
+      stopAnimation();
+
+      state.isPaused = false;
+      state.time = 0;
+      state.lastMeetingTime = 0;
+      state.intervals = [];
+      state.currentInterval = null;
+
+      // 重置对象位置
+      if (state.config.startMode === 'two-ends') {
+        state.objA.position = 0;
+        state.objA.direction = 1;
+        state.objB.position = 1;
+        state.objB.direction = -1;
+      } else {
+        state.objA.position = 0;
+        state.objA.direction = 1;
+        state.objB.position = 0;
+        state.objB.direction = 1;
+      }
+
+      state.objA.distance = 0;
+      state.objB.distance = 0;
+      state.objA.turnCount = 0;
+      state.objB.turnCount = 0;
+
+      // 开始第一个区间
+      startNewInterval();
+
+      updateDisplay();
+      draw();  // draw() 已经包含清空逻辑
+      updatePlayPauseButton();
+    }
+
+    function startNewInterval() {
+      const n = state.intervals.length + 1;
+
+      state.currentInterval = {
+        n: n,
+        distanceA: 0,
+        distanceB: 0,
+        trailA: [],
+        trailB: []
+      };
+    }
+
+    function togglePlayPause() {
+      if (state.isPlaying && !state.isPaused) {
+        state.isPaused = true;
+      } else if (state.isPlaying && state.isPaused) {
+        state.isPaused = false;
+        state.lastTime = performance.now();
+        state.animationId = requestAnimationFrame(animate);
+      } else {
+        state.isPlaying = true;
+        state.isPaused = false;
+        state.lastTime = performance.now();
+        startAnimation();
+      }
+
+      updatePlayPauseButton();
+    }
+
+    function startAnimation() {
+      state.animationId = requestAnimationFrame(animate);
+    }
+
+    function stopAnimation() {
+      if (state.animationId) {
+        cancelAnimationFrame(state.animationId);
+        state.animationId = null;
+      }
+      state.isPlaying = false;
+      state.isPaused = false;
+    }
+
+    function animate(currentTime) {
+      if (!state.isPlaying || state.isPaused) return;
+
+      const deltaTime = (currentTime - state.lastTime) / 1000;  // 秒
+      state.lastTime = currentTime;
+
+      state.time += deltaTime;
+
+      // 更新位置
+      const prevDirA = state.objA.direction;
+      const prevDirB = state.objB.direction;
+
+      updatePositions(deltaTime);
+
+      // 检测相遇(只有方向相反才算相遇)
+      if (checkMeeting(prevDirA, prevDirB)) {
+        handleMeeting();
+      }
+
+      // 检测边界
+      const maxIntervals = 4;  // 最多4次相遇
+      if (state.intervals.length >= maxIntervals) {
+        stopAnimation();
+        updatePlayPauseButton();
+      }
+
+      updateDisplay();
+      draw();
+
+      if (state.intervals.length < maxIntervals) {
+        state.animationId = requestAnimationFrame(animate);
+      }
+    }
+
+    function updatePositions(dt) {
+      const distanceA = state.objA.speed * dt;
+      const distanceB = state.objB.speed * dt;
+
+      // 保存旧方向
+      const oldDirectionA = state.objA.direction;
+      const oldDirectionB = state.objB.direction;
+
+      // 更新位置
+      state.objA.position += (distanceA / state.config.totalDistance) * state.objA.direction;
+      state.objB.position += (distanceB / state.config.totalDistance) * state.objB.direction;
+
+      // 检测边界并折返
+      let turnedA = false;
+      let turnedB = false;
+
+      if (state.objA.position >= 1) {
+        // 先记录边界点（带着旧方向）
+        state.currentInterval.trailA.push({
+          x: 1,
+          direction: oldDirectionA,
+          turnCount: state.objA.turnCount || 0
+        });
+
+        state.objA.position = 1;
+        state.objA.direction = -1;
+        state.objA.turnCount = (state.objA.turnCount || 0) + 1;
+        turnedA = true;
+      } else if (state.objA.position <= 0) {
+        // 先记录边界点（带着旧方向）
+        state.currentInterval.trailA.push({
+          x: 0,
+          direction: oldDirectionA,
+          turnCount: state.objA.turnCount || 0
+        });
+
+        state.objA.position = 0;
+        state.objA.direction = 1;
+        state.objA.turnCount = (state.objA.turnCount || 0) + 1;
+        turnedA = true;
+      }
+
+      if (state.objB.position >= 1) {
+        // 先记录边界点（带着旧方向）
+        state.currentInterval.trailB.push({
+          x: 1,
+          direction: oldDirectionB,
+          turnCount: state.objB.turnCount || 0
+        });
+
+        state.objB.position = 1;
+        state.objB.direction = -1;
+        state.objB.turnCount = (state.objB.turnCount || 0) + 1;
+        turnedB = true;
+      } else if (state.objB.position <= 0) {
+        // 先记录边界点（带着旧方向）
+        state.currentInterval.trailB.push({
+          x: 0,
+          direction: oldDirectionB,
+          turnCount: state.objB.turnCount || 0
+        });
+
+        state.objB.position = 0;
+        state.objB.direction = 1;
+        state.objB.turnCount = (state.objB.turnCount || 0) + 1;
+        turnedB = true;
+      }
+
+      // 如果没有折返，记录正常轨迹点
+      if (!turnedA) {
+        state.currentInterval.trailA.push({
+          x: state.objA.position,
+          direction: state.objA.direction,
+          turnCount: state.objA.turnCount || 0
+        });
+      }
+
+      if (!turnedB) {
+        state.currentInterval.trailB.push({
+          x: state.objB.position,
+          direction: state.objB.direction,
+          turnCount: state.objB.turnCount || 0
+        });
+      }
+
+      // 更新总路程
+      state.currentInterval.distanceA += distanceA;
+      state.currentInterval.distanceB += distanceB;
+
+      state.objA.distance += distanceA;
+      state.objB.distance += distanceB;
+    }
+
+    function checkMeeting(prevDirA, prevDirB) {
+      // 冷却时间：相遇后1秒内不再检测
+      if (state.time - state.lastMeetingTime < 1.0) {
+        return false;
+      }
+
+      // 只有方向相反才算"相遇"
+      const isOppositeDirection =
+        (state.objA.direction === 1 && state.objB.direction === -1) ||
+        (state.objA.direction === -1 && state.objB.direction === 1);
+
+      if (!isOppositeDirection) return false;
+
+      // 计算距离
+      const distance = Math.abs(state.objA.position - state.objB.position);
+      const threshold = 0.02;  // 相遇阈值
+
+      return distance < threshold;
+    }
+
+    function handleMeeting() {
+      // 完成当前区间
+      const n = state.currentInterval.n;
+      const total = state.currentInterval.distanceA + state.currentInterval.distanceB;
+
+      state.currentInterval.total = total;
+
+      // 记录相遇时的实际位置
+      state.currentInterval.meetingPosition = (state.objA.position + state.objB.position) / 2;
+
+      state.intervals.push(state.currentInterval);
+
+      // 记录相遇时间
+      state.lastMeetingTime = state.time;
+
+      // ✅ 不再显示验证框，直接开始下一次
+      // showVerificationBox(n, state.currentInterval);
+
+      // ✅ 不暂停，继续动画
+      // state.isPaused = true;
+      // updatePlayPauseButton();
+
+      // 自动开始下一个区间
+      if (n < 4) {
+        startNewInterval();
+      }
+    }
+
+    function continueToNextInterval() {
+      if (state.intervals.length >= 4) {
+        reset();
+        return;
+      }
+
+      // 关闭验证框
+      closeVerificationBox();
+
+      // 开始新区间
+      startNewInterval();
+
+      // 继续播放
+      state.isPaused = false;
+      state.lastTime = performance.now();
+      state.animationId = requestAnimationFrame(animate);
+      updatePlayPauseButton();
+    }
+
+    /* ============================================
+       绘制逻辑
+       ============================================ */
+
+    function draw() {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+
+      // 清空画布
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 绘制历史快照区域（下方）
+      state.intervals.forEach((interval, index) => {
+        drawHistorySnapshot(ctx, interval, index);
+      });
+
+      // 绘制实时动画区域（上方）
+      if (state.currentInterval && state.intervals.length < 4) {
+        drawRealtimeAnimation(ctx, state.currentInterval);
+      }
+    }
+
+    // 绘制实时动画区域（上方）
+    function drawRealtimeAnimation(ctx, interval) {
+      const { startX, endX, baseY, trackAOffset, trackBOffset } = state.layout;
+      const intervalY = baseY;  // 固定在上方
+      const trackY = intervalY + trackAOffset;  // 甲乙都在同一条线上
+
+      // 绘制标题（和数据面板"实时数据"样式一致）
+      ctx.fillStyle = '#787774';  // var(--text-secondary)
+      ctx.font = '600 18px -apple-system, sans-serif';  // 统一为18px
+      ctx.textAlign = 'left';
+      ctx.fillText(`实时动画 - 第${interval.n}次相遇进行中`, startX, intervalY - 40);
+
+      // 绘制单条轨道（背景线）
+      ctx.beginPath();
+      ctx.moveTo(startX, trackY);
+      ctx.lineTo(endX, trackY);
+      ctx.strokeStyle = '#E9E5E2';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // ✅ 只绘制当前区间的轨迹（不显示历史轨迹，避免重叠）
+      if (interval.trailA.length > 1) {
+        drawTrailSimple(ctx, interval.trailA, startX, endX, trackY, '#E03E3E');
+      }
+      if (interval.trailB.length > 1) {
+        drawTrailSimple(ctx, interval.trailB, startX, endX, trackY, '#5E8AD2');
+      }
+
+      // 绘制当前位置（甲乙都在同一条线上）
+      drawObject(ctx, state.objA, startX + state.objA.position * (endX - startX), trackY);
+      drawObject(ctx, state.objB, startX + state.objB.position * (endX - startX), trackY);
+    }
+
+    // 绘制历史快照区域（下方，阶梯式）
+    function drawHistorySnapshot(ctx, interval, index) {
+      const { startX, endX, baseY, trackAOffset, trackBOffset } = state.layout;
+      const snapshotStartY = baseY + 100;  // 从实时动画下方100px开始（缩小50%）
+      const snapshotY = snapshotStartY + index * 150;  // 每个快照间隔150px
+
+      // 甲乙轨迹微小位移避免重叠
+      const trackAY = snapshotY + trackAOffset;  // 甲轨迹基准线
+      // ✅ 第四次快照115px，其他90px
+      const adjustedTrackBOffset = (index === 3) ? 115 : trackBOffset;
+      const trackBY = snapshotY + adjustedTrackBOffset;  // 乙轨迹基准线（下方）
+
+      // 绘制标题（和数据面板"实时数据"样式一致）
+      ctx.fillStyle = '#787774';  // var(--text-secondary)
+      ctx.font = '600 18px -apple-system, sans-serif';  // 增大到18px
+      ctx.textAlign = 'left';
+      ctx.fillText(`第${interval.n}次相遇快照`, startX, snapshotY + trackAOffset - 15);
+
+      // ✅ 新逻辑：拼接所有历史区间的轨迹，形成一条完整的累积轨迹线
+      const mergedTrailA = mergeTrails(state.intervals.slice(0, index + 1), 'trailA');
+      const mergedTrailB = mergeTrails(state.intervals.slice(0, index + 1), 'trailB');
+
+      // 绘制甲轨道（背景线）
+      ctx.beginPath();
+      ctx.moveTo(startX, trackAY);
+      ctx.lineTo(endX, trackAY);
+      ctx.strokeStyle = '#E9E5E2';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // 绘制乙轨道（背景线）
+      ctx.beginPath();
+      ctx.moveTo(startX, trackBY);
+      ctx.lineTo(endX, trackBY);
+      ctx.stroke();
+
+      // 绘制完整的累积轨迹（带方向箭头和垂直连接线）
+      if (mergedTrailA.length > 1) {
+        drawTrailWithOffsetAndArrows(ctx, mergedTrailA, startX, endX, trackAY, '#E03E3E', true);
+      }
+
+      if (mergedTrailB.length > 1) {
+        drawTrailWithOffsetAndArrows(ctx, mergedTrailB, startX, endX, trackBY, '#5E8AD2', true);
+      }
+
+      // 绘制右侧标签（第几次相遇）
+      const boxX = endX + 15;
+      const boxY = snapshotY + trackAOffset + 10;
+      const boxWidth = 80;
+      const boxHeight = 40;
+
+      // 方框背景
+      ctx.fillStyle = '#FFF8E7';
+      ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+      // 方框边框
+      ctx.strokeStyle = '#C28B5D';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+      // 方框内文字（直接使用固定标签）
+      const labels = ['1s', '2s', '5s', '7s'];
+      ctx.fillStyle = '#C28B5D';
+      ctx.font = 'bold 18px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(labels[interval.n - 1], boxX + boxWidth / 2, boxY + 26);
+
+      // 绘制相遇点标记
+      const meetingPos = interval.meetingPosition !== undefined ? interval.meetingPosition : 0.5;
+      const meetingX = startX + meetingPos * (endX - startX);
+
+      ctx.beginPath();
+      ctx.setLineDash([8, 4]);
+      ctx.moveTo(meetingX, trackAY - 10);
+      ctx.lineTo(meetingX, trackBY + 10);
+      ctx.strokeStyle = '#D4952A';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#D4952A';
+      ctx.font = 'bold 12px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('⭐', meetingX, trackAY - 15);
+    }
+
+    // ✅ 新函数：拼接多个区间的轨迹，形成连续的累积轨迹
+    function mergeTrails(intervals, trailKey) {
+      if (intervals.length === 0) return [];
+
+      const merged = [];
+
+      intervals.forEach((interval, intervalIndex) => {
+        const trail = interval[trailKey];
+
+        if (intervalIndex === 0) {
+          // 第一个区间，直接添加所有点
+          merged.push(...trail);
+        } else {
+          // 后续区间：跳过第一个点（相遇点重复了）
+          if (trail.length > 1) {
+            merged.push(...trail.slice(1));
+          }
+        }
+      });
+
+      return merged;
+    }
+
+    // 带位移和箭头的轨迹绘制函数（用于快照，完整折线，折返处用垂直线连接）
+    function drawTrailWithOffsetAndArrows(ctx, trail, startX, endX, baseTrackY, color, isLatest) {
+      if (trail.length < 2) return;
+
+      // 找出所有折返点，分段绘制
+      let segments = [];
+      let currentSegment = [trail[0]];
+      let currentDirection = trail[0].direction || 1;
+
+      for (let i = 1; i < trail.length; i++) {
+        const point = trail[i];
+
+        // 检查方向是否改变
+        const directionChanged = (point.direction !== undefined && point.direction !== currentDirection);
+
+        if (directionChanged) {
+          // 方向改变，开始新段
+          segments.push({
+            points: currentSegment,
+            direction: currentDirection
+          });
+          currentSegment = [point];
+          currentDirection = point.direction;
+        } else {
+          currentSegment.push(point);
+        }
+      }
+
+      // 添加最后一段
+      if (currentSegment.length > 0) {
+        segments.push({
+          points: currentSegment,
+          direction: currentDirection
+        });
+      }
+
+      // ✅ 每段向下偏移24px，避免重叠（增加到24px，防止段数多时重叠）
+      const offsetPerSegment = 24;
+
+      // 绘制每一段
+      segments.forEach((segment, segIndex) => {
+        const segmentY = baseTrackY + segIndex * offsetPerSegment;
+
+        // 绘制水平段
+        ctx.beginPath();
+        const startXPos = startX + segment.points[0].x * (endX - startX);
+        const endXPos = startX + segment.points[segment.points.length - 1].x * (endX - startX);
+
+        ctx.moveTo(startXPos, segmentY);
+        ctx.lineTo(endXPos, segmentY);
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // ✅ 绘制方向箭头（在线上，在每段终点）
+        if (isLatest) {
+          drawArrowOnLine(ctx, endXPos, segmentY, segment.direction, color);
+        }
+
+        // 如果不是最后一段，绘制垂直连接线连接到下一段
+        if (segIndex < segments.length - 1) {
+          const nextSegmentY = baseTrackY + (segIndex + 1) * offsetPerSegment;
+
+          // 绘制垂直线（从当前段终点直接向上到下一段的Y位置）
+          // 折返点就是边界点，第1段终点和第2段起点x坐标相同，只是Y不同
+          ctx.beginPath();
+          ctx.moveTo(endXPos, segmentY);
+          ctx.lineTo(endXPos, nextSegmentY);
+
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      });
+    }
+
+    // 绘制方向箭头
+    function drawDirectionArrow(ctx, x, y, direction, color) {
+      const arrowSize = 8;
+      const offsetFromLine = 15;  // 箭头距离轨迹线的垂直距离
+
+      ctx.save();
+      ctx.translate(x, y - offsetFromLine);
+
+      // 根据方向旋转
+      if (direction === -1) {
+        // 向左，旋转180度
+        ctx.rotate(Math.PI);
+      }
+
+      // 绘制箭头
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-arrowSize / 2, -arrowSize);
+      ctx.lineTo(arrowSize / 2, -arrowSize);
+      ctx.closePath();
+
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // ✅ 新函数：在线上绘制箭头（在终点，指向运动方向）
+    function drawArrowOnLine(ctx, x, y, direction, color) {
+      const arrowSize = 10;
+
+      ctx.save();
+      ctx.translate(x, y);
+
+      // 根据方向旋转
+      if (direction === -1) {
+        // 向左，箭头指向左
+        ctx.rotate(Math.PI);
+      }
+      // direction === 1 时向右，不需要旋转（默认）
+
+      // 绘制箭头（三角形，指向右）
+      ctx.beginPath();
+      ctx.moveTo(0, 0);  // 箭头尖端
+      ctx.lineTo(-arrowSize, -arrowSize / 2);
+      ctx.lineTo(-arrowSize, arrowSize / 2);
+      ctx.closePath();
+
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // 简单轨迹绘制函数（用于实时动画和快照）
+    function drawTrailSimple(ctx, trail, startX, endX, trackY, color) {
+      if (trail.length < 2) return;
+
+      ctx.beginPath();
+      ctx.moveTo(startX + trail[0].x * (endX - startX), trackY);
+
+      for (let i = 1; i < trail.length; i++) {
+        const point = trail[i];
+        ctx.lineTo(startX + point.x * (endX - startX), trackY);
+      }
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    // 旧的轨迹绘制函数（保留但不再使用）
+    function drawTrail(ctx, trail, startX, endX, intervalY, trackOffset, meetingPos, isCurrent = false, color = '#E03E3E', intervalIndex = 0) {
+      if (trail.length < 2) return;
+
+      let currentDirection = trail[0].direction;
+      let currentTurnCount = trail[0].turnCount || 0;
+
+      // 根据颜色判断是甲还是乙，决定折返时的偏移方向
+      const isObjectA = color === '#E03E3E';  // 甲向上偏移（负值），乙向下偏移（正值）
+      const turnOffset = currentTurnCount * 30;  // 每次折返偏移30px
+      const startY = intervalY + trackOffset + (isObjectA ? -turnOffset : turnOffset);
+
+      ctx.beginPath();
+      ctx.moveTo(
+        startX + trail[0].x * (endX - startX),
+        startY
+      );
+
+      for (let i = 1; i < trail.length; i++) {
+        const point = trail[i];
+        const turnCount = point.turnCount || 0;
+        const pointTurnOffset = turnCount * 30;
+        const y = intervalY + trackOffset + (isObjectA ? -pointTurnOffset : pointTurnOffset);
+
+        if (point.direction !== currentDirection) {
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(
+            startX + trail[i-1].x * (endX - startX),
+            intervalY + trackOffset + (isObjectA ? -currentTurnCount * 30 : currentTurnCount * 30)
+          );
+          ctx.lineTo(
+            startX + point.x * (endX - startX),
+            y
+          );
+          currentDirection = point.direction;
+          currentTurnCount = turnCount;
+        } else {
+          ctx.lineTo(
+            startX + point.x * (endX - startX),
+            y
+          );
+        }
+      }
+
+      // 如果是当前区间,连到当前位置
+      if (isCurrent) {
+        const obj = color === '#E03E3E' ? state.objA : state.objB;
+        if (obj) {
+          const currentTurnCountForObj = obj.turnCount || 0;
+          const currentTurnOffset = currentTurnCountForObj * 30;
+          const currentY = intervalY + trackOffset + (isObjectA ? -currentTurnOffset : currentTurnOffset);
+          ctx.lineTo(
+            startX + obj.position * (endX - startX),
+            currentY
+          );
+        }
+      }
+
+      // 所有轨迹都使用简单线条，不加粗不高亮
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    function drawObject(ctx, obj, x, y) {
+      ctx.beginPath();
+      ctx.arc(x, y, 10, 0, Math.PI * 2);
+      ctx.fillStyle = obj.color;
+      ctx.fill();
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 10px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(obj.label, x, y);
+    }
+
+    /* ============================================
+       验证框
+       ============================================ */
+
+    function showVerificationBox(n, interval) {
+      const container = document.getElementById('canvasContainer');
+      const existingBox = container.querySelector('.verification-box');
+      if (existingBox) existingBox.remove();
+
+      const box = document.createElement('div');
+      box.className = 'verification-box';
+
+      const distanceA = interval.distanceA;
+      const distanceB = interval.distanceB;
+      const total = interval.total;
+      const s = state.config.totalDistance;
+
+      const totalA_S = (distanceA / s).toFixed(2);
+      const totalB_S = (distanceB / s).toFixed(2);
+      const total_S = (total / s).toFixed(2);
+
+      let formula = '';
+      if (state.config.startMode === 'two-ends') {
+        formula = `(2×${n}-1)S = ${(2*n-1)}S`;
+      } else {
+        formula = `2×${n}S = ${2*n}S`;
+      }
+
+      box.innerHTML = `
+        <div class="verification-title">第${n}次相遇</div>
+        <div class="verification-formula">
+          甲${totalA_S}S + 乙${totalB_S}S = ${total_S}S ✅
+        </div>
+        <div class="verification-detail">
+          验证: ${formula}
+        </div>
+        <div class="verification-detail" style="margin-top: 8px">
+          甲路程: ${distanceA.toFixed(1)}米
+        </div>
+        <div class="verification-detail">
+          乙路程: ${distanceB.toFixed(1)}米
+        </div>
+        <div class="verification-detail">
+          共计: ${total.toFixed(1)}米
+        </div>
+        <button class="verification-close" onclick="continueToNextInterval()">
+          继续演示
+        </button>
+      `;
+
+      container.appendChild(box);
+    }
+
+    function closeVerificationBox() {
+      const container = document.getElementById('canvasContainer');
+      const box = container.querySelector('.verification-box');
+      if (box) box.remove();
+    }
+
+    /* ============================================
+       显示更新
+       ============================================ */
+
+    function updateDisplay() {
+      // 出发模式
+      const modeText = state.config.startMode === 'two-ends' ? '两端出发' : '同端出发';
+      document.getElementById('displayMode').textContent = modeText;
+
+      // 速度
+      document.getElementById('displaySpeedA').textContent = `${state.config.speedA.toFixed(1)} m/s`;
+      document.getElementById('displaySpeedB').textContent = `${state.config.speedB.toFixed(1)} m/s`;
+
+      // 相遇次数
+      document.getElementById('displayMeetingCount').textContent = `${state.intervals.length} 次`;
+
+      // 当前区间
+      let currentText = '准备开始';
+      if (state.intervals.length > 0) {
+        currentText = `第${state.intervals.length}次相遇完成`;
+      } else if (state.isPlaying) {
+        currentText = `第${state.currentInterval?.n || 1}次相遇进行中...`;
+      }
+      document.getElementById('displayCurrentInterval').textContent = currentText;
+    }
+
+    function updatePlayPauseButton() {
+      const btn = document.getElementById('playPauseBtn');
+      const icon = document.getElementById('playPauseIcon');
+      const text = document.getElementById('playPauseText');
+
+      if (state.isPaused) {
+        icon.textContent = '▶';
+        text.textContent = '继续';
+        btn.classList.add('primary');
+      } else if (state.isPlaying) {
+        icon.textContent = '⏸';
+        text.textContent = '暂停';
+        btn.classList.remove('primary');
+      } else {
+        icon.textContent = '▶';
+        text.textContent = '开始演示';
+        btn.classList.add('primary');
+      }
+    }
+
+    /* ============================================
+       启动
+       ============================================ */
+
+    window.addEventListener('load', init);
+    window.continueToNextInterval = continueToNextInterval;
+  </script>
+</body>
+</html>
